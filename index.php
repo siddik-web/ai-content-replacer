@@ -19,11 +19,13 @@ if (!file_exists($logsPath)) {
 $logsFile = $logsPath . '/ollama_api.log';
 $logger->pushHandler(new StreamHandler($logsFile, Level::Error));
 
-$inputFilePathSite = '/Users/siddiqur/Sites/Joomla4/language/en-GB/com_easystore.ini'; // Input file path
-$inputFilePathAdmin = '/Users/siddiqur/Sites/Joomla4/administrator/language/en-GB/com_easystore.ini'; // Input file path
+$rootPath = '/Users/siddiqur/Sites/Joomla4'; // Root path of the Joomla project
 
-$outputFilePathSite = '/Users/siddiqur/Sites/Joomla4/language'; // Output file path
-$outputFilePathAdmin = '/Users/siddiqur/Sites/Joomla4/administrator/language/'; // Output file path
+$inputFilePathSite = $rootPath . '/language/en-GB/com_easystore.ini'; // Input file path
+$inputFilePathAdmin = $rootPath . '/administrator/language/en-GB/com_easystore.ini'; // Input file path
+
+$outputFilePathSite = $rootPath . '/language'; // Output file path
+$outputFilePathAdmin = $rootPath . '/administrator/language/'; // Output file path
 
 
 
