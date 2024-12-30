@@ -1,0 +1,22 @@
+{
+    "name": "siddik-web/ollama-api",
+    "description": "Ollama API",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Md Siddiqur Rahman",
+            "email": "siddikcoder@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "ardagnsrn/ollama-php": "dev-master",
+        "monolog/monolog": "^3.0@dev"
+    }
+}
