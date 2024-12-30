@@ -23,5 +23,5 @@ This tool provides an automated translation solution for Joomla language files u
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/joomla-translation-tool.git
-   cd joomla-translation-tool
+   git clone https://github.com/siddik-web/ai-content-replacer
+   cd ai-content-replacer
