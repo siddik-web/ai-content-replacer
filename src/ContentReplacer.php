@@ -17,7 +17,7 @@ class ContentReplacer {
         $this->ollamaApi = OllamaApi::getInstance($logger);
     }
 
-    public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir): void {
+    public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir, bool $isAdmin = false): void {
         // Get translations for the current locale and admin files
         $translations = $this->translationService->getTranslations($locale);
         $adminTranslations = $this->translationService->getAdminTranslations($locale);
@@ -34,7 +34,7 @@ class ContentReplacer {
         if (!is_dir($localeOutputDir)) {
             mkdir($localeOutputDir, 0777, true);
         }
-        $outputFilePath = $localeOutputDir . "/" . $this->translationService->getComponentName() . "_replaced.ini";
+        $outputFilePath = $localeOutputDir . "/" . $this->translationService->getComponentName() . "_replaced" . ($isAdmin ? ".sys" : "") .".ini";
         $missingKeysFilePath = "$localeOutputDir/missing_keys.ini";
 
         // Initialize arrays for updated lines and missing keys
