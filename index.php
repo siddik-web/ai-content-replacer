@@ -39,8 +39,8 @@ $translationService = new TranslationService();
 $translationService->setBaseLanguagePath($outputFilePathSite)->setBaseAdminLanguagePath($outputFilePathAdmin)->setComponentName($componentName);
 $contentReplacer = new ContentReplacer($translationService, $logger);
 
-$locale = "fi-FI";
+$locale = "fr-FR";
 
-// $contentReplacer->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
-$contentReplacer->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
+$contentReplacer->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
+// $contentReplacer->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
 // $contentReplacer->replaceContent($inputFilePathAdminSys, $locale, $outputFilePathAdmin);

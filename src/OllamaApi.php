@@ -38,9 +38,11 @@ class OllamaApi
      * @param string $text Text to translate.
      * @param string $locale Target locale for translation.
      * @param string $model Model name to use for translation.
-     * @param float $temperature Control randomness in generation (default: 0.3).
-     * @param int $maxTokens Limit for response tokens (default: 100).
-     * @param int|null $timeout Request timeout in seconds (default: 10).
+     * @param float $temperature Control randomness in generation (default: 0.0).
+     * @param int $maxTokens Limit for response tokens (default: 300).
+     * @param int|null $timeout Request timeout in seconds (default: 20).
+     * @param int $maxRetries Maximum number of retries (default: 3).
+     * @param int $initialBackoff Initial wait time in seconds (default: 2).
      * @return string|null The translated text or null in case of an error.
      */
     public function getResponse(
@@ -48,7 +50,7 @@ class OllamaApi
         string $locale,
         string $model = "gemma2",
         float $temperature = 0.0,
-        int $maxTokens = 100,
+        int $maxTokens = 300,
         ?int $timeout = 20,
         int $maxRetries = 3,
         int $initialBackoff = 2 // Initial wait time in seconds
