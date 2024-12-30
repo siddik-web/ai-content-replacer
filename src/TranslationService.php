@@ -43,9 +43,10 @@ class TranslationService
      *
      * @param string $path The new base path for public language files.
      */
-    public function setBaseLanguagePath(string $path): void
+    public function setBaseLanguagePath(string $path): self
     {
         $this->baseLanguagePath = $path;
+        return $this;
     }
 
     /**
@@ -53,9 +54,10 @@ class TranslationService
      *
      * @param string $path The new base path for admin language files.
      */
-    public function setBaseAdminLanguagePath(string $path): void
+    public function setBaseAdminLanguagePath(string $path): self
     {
         $this->baseAdminLanguagePath = $path;
+        return $this;
     }
 
     /**

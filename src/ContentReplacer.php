@@ -1,7 +1,11 @@
 <?php
+/**
+ * TranslationService handles the loading and parsing of translation files.
+ */
 
 namespace App;
 
+use App\OllamaApi;
 use Psr\Log\LoggerInterface;
 
 class ContentReplacer {
@@ -30,7 +34,7 @@ class ContentReplacer {
         if (!is_dir($localeOutputDir)) {
             mkdir($localeOutputDir, 0777, true);
         }
-        $outputFilePath = "$localeOutputDir/com_easystore_replaced.ini";
+        $outputFilePath = $localeOutputDir . "/" . $this->translationService->getComponentName() . "_replaced.ini";
         $missingKeysFilePath = "$localeOutputDir/missing_keys.ini";
 
         // Initialize arrays for updated lines and missing keys

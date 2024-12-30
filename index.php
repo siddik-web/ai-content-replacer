@@ -1,6 +1,6 @@
 <?php
 ini_set('max_execution_time', 1500); //300 seconds = 5 minutes
-require_once('./vendor/autoload.php');
+require_once './vendor/autoload.php';
 
 use App\ContentReplacer;
 use App\TranslationService;
@@ -35,7 +35,8 @@ $outputFilePathSite = $rootPath . '/language'; // Output file path
 $outputFilePathAdmin = $rootPath . '/administrator/language/'; // Output file path
 
 // Create the TranslationService instance.
-$translationService = new TranslationService($outputFilePathSite, $outputFilePathAdmin);
+$translationService = new TranslationService();
+$translationService->setBaseLanguagePath($outputFilePathSite)->setBaseAdminLanguagePath($outputFilePathAdmin)->setComponentName($componentName);
 $contentReplacer = new ContentReplacer($translationService, $logger);
 
 $locale = "fi-FI";
