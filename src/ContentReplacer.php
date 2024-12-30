@@ -95,6 +95,7 @@ class ContentReplacer {
     
         // Split the $missingKeys array into smaller chunks
         $chunks = array_chunk($missingKeys, $chunkSize, true);
+        echo "<div class='container'>";
         echo "<h1>Resolved Missing Key List For Locale: $locale</h1>";
         echo "<ul>";
         foreach ($chunks as $chunk) {
@@ -119,6 +120,7 @@ class ContentReplacer {
         }
 
         echo "</ul>";
+        echo "</div>";
     
         return $resolvedKeys;
     }

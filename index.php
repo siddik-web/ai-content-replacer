@@ -1,46 +1,111 @@
-<?php
-ini_set('max_execution_time', 1500); //300 seconds = 5 minutes
-require_once './vendor/autoload.php';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translate Language - Ollama Translate Language</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f1f1f1;
+        }
 
-use App\ContentReplacer;
-use App\TranslationService;
-use Monolog\Handler\StreamHandler;
-use Monolog\Level;
-use Monolog\Logger;
+        .container {
+            width: 50%;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+        }
 
-$logger = new Logger('ollama_api');
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
 
-$logsPath = __DIR__ . '/logs';
+        form {
+            margin-top: 20px;
+            margin-left: 10px;
+            text-align: center;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
 
-if (!file_exists($logsPath)) {
-    mkdir($logsPath);
-}
+        .form-group {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
 
-$logsFile = $logsPath . '/ollama_api.log';
-$logger->pushHandler(new StreamHandler($logsFile, Level::Error));
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
 
-$rootPath = '/Users/siddiqur/Sites/Joomla4'; // Root path of the Joomla project
-$componentName = 'com_easystore'; // Component name
-$langCode = 'en-GB'; // Language code
-$langFolder = 'language'; // Language folder
-$adminFolder = 'administrator'; // Administrator folder
-$langPath = $rootPath . '/' . $langFolder . '/' . $langCode; // Language path
-$langAdminPath = $rootPath . '/' . $adminFolder . '/' . $langFolder . '/' . $langCode; // Language path
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
 
-$inputFilePathSite = $langPath . '/' . $componentName . '.ini'; // Input file path
-$inputFilePathAdmin = $langAdminPath . '/' . $componentName . '.ini'; // Input file path
-$inputFilePathAdminSys = $langAdminPath . '/' . $componentName . '.sys.ini'; // Input file path
+        input[type="submit"] {
+            width: 100%;
+            padding: 10px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
 
-$outputFilePathSite = $rootPath . '/language'; // Output file path
-$outputFilePathAdmin = $rootPath . '/administrator/language/'; // Output file path
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
 
-// Create the TranslationService instance.
-$translationService = new TranslationService();
-$translationService->setBaseLanguagePath($outputFilePathSite)->setBaseAdminLanguagePath($outputFilePathAdmin)->setComponentName($componentName);
-$contentReplacer = new ContentReplacer($translationService, $logger);
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Translate Language - Ollama Translate Language</h1>
+        <form action="application.php" method="post">
+            <div class="form-group">
+                <label for="code">Code:</label>
+                <input type="text" id="code" name="code" value="">
+            </div>
+            <div class="form-group">
+                <label for="file">File:</label>
+                <select id="file" name="file">
+                    <option value="site">Site</option>
+                    <option value="admin">Admin</option>
+                    <option value="sys">Admin Sys</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Submit">
+            </div>
+        </form>
+    </div>
+</body>
+</html>
 
-$locale = "fr-FR";
 
-$contentReplacer->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
-// $contentReplacer->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
-// $contentReplacer->replaceContent($inputFilePathAdminSys, $locale, $outputFilePathAdmin);
+
+
+
+
