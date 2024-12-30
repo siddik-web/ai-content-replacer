@@ -18,6 +18,13 @@ class TranslationService
     private string $baseAdminLanguagePath;
 
     /**
+     * Component name
+     *
+     * @var string
+     */
+    private string $componentName;
+
+    /**
      * Constructor to initialize paths for language files.
      *
      * @param string $baseLanguagePath Path to the public language files. Defaults to /language.
@@ -102,7 +109,7 @@ class TranslationService
     private function generateFilePath(string $locale, bool $isAdmin): string
     {
         $basePath = $isAdmin ? $this->baseAdminLanguagePath : $this->baseLanguagePath;
-        return "$basePath/$locale/com_easystore.ini";
+        return "$basePath/$locale/{$this->getComponentName()}.ini";
     }
 
     /**
@@ -157,6 +164,27 @@ class TranslationService
         }
         
         return null;
+    }
+
+    /**
+     * Sets the component name for translations.
+     *
+     * @param string $componentName The component name.
+     */
+    public function setComponentName(string $componentName): self
+    {
+        $this->componentName = $componentName;
+        return $this;
+    }
+
+    /**
+     * Retrieves the component name for translations.
+     *
+     * @return string The component name.
+     */
+    public function getComponentName(): string
+    {
+        return $this->componentName;
     }
 }
 
