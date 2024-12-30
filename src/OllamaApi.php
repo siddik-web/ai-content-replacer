@@ -47,7 +47,7 @@ class OllamaApi
         string $text,
         string $locale,
         string $model = "gemma2",
-        float $temperature = 0.3,
+        float $temperature = 0.0,
         int $maxTokens = 100,
         ?int $timeout = 20,
         int $maxRetries = 3,
