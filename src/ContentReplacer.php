@@ -34,7 +34,7 @@ class ContentReplacer {
         if (!is_dir($localeOutputDir)) {
             mkdir($localeOutputDir, 0777, true);
         }
-        $outputFilePath = $localeOutputDir . "/" . $this->translationService->getComponentName() . "_replaced" . ($isAdmin ? ".sys" : "") .".ini";
+        $outputFilePath = $localeOutputDir . "/" . $this->translationService->getComponentName() . "_new" . ($isAdmin ? ".sys" : "") .".ini";
         $missingKeysFilePath = "$localeOutputDir/missing_keys.ini";
 
         // Initialize arrays for updated lines and missing keys
