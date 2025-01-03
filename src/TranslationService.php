@@ -111,7 +111,7 @@ class TranslationService
     private function generateFilePath(string $locale, bool $isAdmin): string
     {
         $basePath = $isAdmin ? $this->baseAdminLanguagePath : $this->baseLanguagePath;
-        return "$basePath/$locale/{$this->getComponentName()}.ini";
+        return "$basePath/$locale/{$locale}.{$this->getComponentName()}.ini";
     }
 
     /**

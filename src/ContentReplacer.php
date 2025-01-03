@@ -34,7 +34,7 @@ class ContentReplacer {
         if (!is_dir($localeOutputDir)) {
             mkdir($localeOutputDir, 0777, true);
         }
-        $outputFilePath = $localeOutputDir . "/" . $this->translationService->getComponentName() . "_new" . ($isAdmin ? ".sys" : "") .".ini";
+        $outputFilePath = $localeOutputDir . "/" . $locale . '.' . $this->translationService->getComponentName() . "_new" . ($isAdmin ? ".sys" : "") .".ini";
         $missingKeysFilePath = "$localeOutputDir/missing_keys.ini";
 
         // Initialize arrays for updated lines and missing keys
@@ -116,7 +116,7 @@ class ContentReplacer {
             }
     
             // Optional: Add a short sleep to reduce load on the API and server
-            sleep(2); // Adjust delay if needed
+            // sleep(2); // Adjust delay if needed
         }
 
         echo "</ul>";

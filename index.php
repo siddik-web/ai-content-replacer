@@ -126,17 +126,17 @@ if (!file_exists($logsPath)) {
 $logsFile = $logsPath . '/ollama_api.log';
 $logger->pushHandler(new StreamHandler($logsFile, Level::Error));
 
-$rootPath = '/Users/siddiqur/Sites/Joomla4'; // Root path of the Joomla project
-$componentName = 'com_easystore'; // Component name
+$rootPath = '/Users/siddiqur/Sites/sppb5'; // Root path of the Joomla project
+$componentName = 'com_sppagebuilder'; // Component name
 $langCode = 'en-GB'; // Language code
 $langFolder = 'language'; // Language folder
 $adminFolder = 'administrator'; // Administrator folder
 $langPath = $rootPath . '/' . $langFolder . '/' . $langCode; // Language path
 $langAdminPath = $rootPath . '/' . $adminFolder . '/' . $langFolder . '/' . $langCode; // Language path
 
-$inputFilePathSite = $langPath . '/' . $componentName . '.ini'; // Input file path
-$inputFilePathAdmin = $langAdminPath . '/' . $componentName . '.ini'; // Input file path
-$inputFilePathAdminSys = $langAdminPath . '/' . $componentName . '.sys.ini'; // Input file path
+$inputFilePathSite = $langPath . '/' . $langCode . '.' . $componentName . '.ini'; // Input file path
+$inputFilePathAdmin = $langAdminPath . '/' . $langCode . '.' . $componentName . '.ini'; // Input file path
+$inputFilePathAdminSys = $langAdminPath . '/' . $langCode . '.' . $componentName . '.sys.ini'; // Input file path
 
 $outputFilePathSite = $rootPath . '/language'; // Output file path
 $outputFilePathAdmin = $rootPath . '/administrator/language/'; // Output file path
