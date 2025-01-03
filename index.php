@@ -136,7 +136,11 @@ $langAdminPath = $rootPath . '/' . $adminFolder . '/' . $langFolder . '/' . $lan
 
 $inputFilePathSite = $langPath . '/' . $langCode . '.' . $componentName . '.ini'; // Input file path
 $inputFilePathAdmin = $langAdminPath . '/' . $langCode . '.' . $componentName . '.ini'; // Input file path
-$inputFilePathAdminSys = $langAdminPath . '/' . $langCode . '.' . $componentName . '.sys.ini'; // Input file path
+$inputFilePathModuleAdmin = $langAdminPath . '/' . $langCode . '.mod_' . $componentName . '_admin_menu.ini'; // Input file path
+$inputFilePathAdminSys = $langAdminPath . '/' . $langCode . '.mod_' . $componentName . '_admin_menu.sys.ini'; // Input file path
+$inputFilePathModuleAdminSys = $langAdminPath . '/' . $langCode . '.' . $componentName . '.sys.ini'; // Input file path
+$inputFileIconPathSite = $langPath . '/' . $langCode . '.mod_' . $componentName . '_icons.ini'; // Input file path
+$inputFileIconPathAdmin = $langAdminPath . '/' . $langCode . '.mod_' . $componentName . '_icons.sys.ini'; // Input file path
 
 $outputFilePathSite = $rootPath . '/language'; // Output file path
 $outputFilePathAdmin = $rootPath . '/administrator/language/'; // Output file path
@@ -157,21 +161,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($requestCode)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($requestFileName)) {
-    $contentReplacer->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
-    $contentReplacer->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
-    $contentReplacer->replaceContent($inputFilePathAdminSys, $locale, $outputFilePathAdmin, true);
+    $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
+    $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
+    $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.sys.ini')->replaceContent($inputFilePathAdminSys, $locale, $outputFilePathAdmin, true);
+    $contentReplacer->setOutputFileName($locale . '.mod_sppagebuilder_admin_menu.ini')->replaceContent($inputFilePathModuleAdmin, $locale, $outputFilePathAdmin);
+    $contentReplacer->setOutputFileName($locale . '.mod_sppagebuilder_admin_menu.sys.ini')->replaceContent($inputFilePathModuleAdminSys, $locale, $outputFilePathAdmin, true);
+    $contentReplacer->setOutputFileName($locale . '.mod_sppagebuilder_icons.ini')->replaceContent($inputFileIconPathSite, $locale, $outputFilePathSite);
+    $contentReplacer->setOutputFileName($locale . '.mod_sppagebuilder_icons.sys.ini')->replaceContent($inputFileIconPathAdmin, $locale, $outputFilePathAdmin, true);
 }
 
 switch ($requestFileName) {
     case 'site':
-        $contentReplacer->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
+        $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
         break;
     case 'admin':
-        $contentReplacer->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
+        $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
         break;
     case 'sys':
-        $contentReplacer->replaceContent($inputFilePathAdminSys, $locale, $outputFilePathAdmin, true);
+        $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.sys.ini')->replaceContent($inputFilePathAdminSys, $locale, $outputFilePathAdmin, true);
         break;
+    case 'menu':
+        $contentReplacer->setOutputFileName($locale . '.mod_sppagebuilder_admin_menu.ini')->replaceContent($inputFilePathModuleAdmin, $locale, $outputFilePathAdmin);
+        break;
+    case 'menu_sys':
+        $contentReplacer->setOutputFileName($locale . '.mod_sppagebuilder_admin_menu.sys.ini')->replaceContent($inputFilePathModuleAdminSys, $locale, $outputFilePathAdmin, true);
+        break;
+    case 'icons':
+        $contentReplacer->setOutputFileName($locale . '.mod_sppagebuilder_icons.ini')->replaceContent($inputFileIconPathSite, $locale, $outputFilePathSite);
+        break;
+    case 'icons_sys':
+        $contentReplacer->setOutputFileName($locale . '.mod_sppagebuilder_icons.sys.ini')->replaceContent($inputFileIconPathAdmin, $locale, $outputFilePathAdmin, true);
+        break;
+
 }
 ?>
 

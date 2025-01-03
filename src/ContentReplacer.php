@@ -11,6 +11,7 @@ use Psr\Log\LoggerInterface;
 class ContentReplacer {
     private $translationService;
     private $ollamaApi;
+    private $outputFileName;
 
     public function __construct(TranslationService $translationService, LoggerInterface $logger) {
         $this->translationService = $translationService;
@@ -34,7 +35,7 @@ class ContentReplacer {
         if (!is_dir($localeOutputDir)) {
             mkdir($localeOutputDir, 0777, true);
         }
-        $outputFilePath = $localeOutputDir . "/" . $locale . '.' . $this->translationService->getComponentName() . "_new" . ($isAdmin ? ".sys" : "") .".ini";
+        $outputFilePath = $localeOutputDir . "/" . $this->getOutputFileName();
         $missingKeysFilePath = "$localeOutputDir/missing_keys.ini";
 
         // Initialize arrays for updated lines and missing keys
@@ -140,5 +141,14 @@ class ContentReplacer {
             $content .= "$key=\"$value\"\n"; // Write in key="value" format
         }
         $this->writeToFile($content, $filePath);
+    }
+
+    public function setOutputFileName(string $outputFileName): self {
+        $this->outputFileName = $outputFileName;
+        return $this;
+    }
+
+    public function getOutputFileName(): string {
+        return $this->outputFileName;
     }
 }
