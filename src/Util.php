@@ -1,5 +1,11 @@
 <?php
 
+namespace App;
+
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
+
 /**
  * Utility class with helper functions for directory and file management.
  */
@@ -37,5 +43,23 @@ class Util
         }
 
         return $folders;
+    }
+
+    public static function writeLog() : void
+    {
+        $logger = new Logger('ollama_api');
+
+        $logsPath = __DIR__ . '/logs';
+
+        if (!file_exists($logsPath)) {
+            mkdir($logsPath);
+        }
+
+        $logsFile = $logsPath . '/ollama_api.log';
+        $logger->pushHandler(new StreamHandler($logsFile, Level::Error));
+    }
+
+    public static function constructFilePath($basePath, $langCode, $componentName, $extension) {
+        return implode(DIRECTORY_SEPARATOR, [$basePath, $langCode . '.' . $componentName . $extension]);
     }
 }

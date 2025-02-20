@@ -111,52 +111,60 @@ require_once './vendor/autoload.php';
 
 use App\ContentReplacer;
 use App\TranslationService;
-use Monolog\Handler\StreamHandler;
-use Monolog\Level;
-use Monolog\Logger;
+use App\Util;
 
-$logger = new Logger('ollama_api');
+// Define constants for fixed values
+define('LANG_FOLDER', 'language');
+define('ADMIN_FOLDER', 'administrator');
+define('INI_EXTENSION', '.ini');
+define('SYS_INI_EXTENSION', '.sys.ini');
 
-$logsPath = __DIR__ . '/logs';
-
-if (!file_exists($logsPath)) {
-    mkdir($logsPath);
-}
-
-$logsFile = $logsPath . '/ollama_api.log';
-$logger->pushHandler(new StreamHandler($logsFile, Level::Error));
+Util::writeLog();
 
 $rootPath = '/Users/siddiqur/Sites/sppb5'; // Root path of the Joomla project
+
+// Validate $rootPath to ensure it's set and not empty
+if (!isset($rootPath) || empty($rootPath)) {
+    throw new InvalidArgumentException('$rootPath must be defined and non-empty.');
+}
+
 $componentName = 'com_sppagebuilder'; // Component name
 $langCode = 'en-GB'; // Language code
-$langFolder = 'language'; // Language folder
-$adminFolder = 'administrator'; // Administrator folder
-$langPath = $rootPath . '/' . $langFolder . '/' . $langCode; // Language path
-$langAdminPath = $rootPath . '/' . $adminFolder . '/' . $langFolder . '/' . $langCode; // Language path
 
-$inputFilePathSite = $langPath . '/' . $langCode . '.' . $componentName . '.ini'; // Input file path
-$inputFilePathAdmin = $langAdminPath . '/' . $langCode . '.' . $componentName . '.ini'; // Input file path
-$inputFilePathAdminSys = $langAdminPath . '/' . $langCode . '.' . $componentName . '.sys.ini'; // Input file path
+// Construct language paths using a helper function for clarity
+$langPath = implode(DIRECTORY_SEPARATOR, [$rootPath, LANG_FOLDER, $langCode]);
+$langAdminPath = implode(DIRECTORY_SEPARATOR, [$rootPath, ADMIN_FOLDER, LANG_FOLDER, $langCode]);
 
-$outputFilePathSite = $rootPath . '/language'; // Output file path
-$outputFilePathAdmin = $rootPath . '/administrator/language/'; // Output file path
+// Validate required variables
+if (!isset($langPath, $langAdminPath, $componentName) || empty($componentName)) {
+    throw new InvalidArgumentException('$langPath, $langAdminPath, and $componentName must be defined and non-empty.');
+}
+
+// Construct input file paths
+$inputFilePathSite = Util::constructFilePath($langPath, $langCode, $componentName, INI_EXTENSION);
+$inputFilePathAdmin = Util::constructFilePath($langAdminPath, $langCode, $componentName, INI_EXTENSION);
+$inputFilePathAdminSys = Util::constructFilePath($langAdminPath, $langCode, $componentName, SYS_INI_EXTENSION);
+
+$outputFilePathSite = implode(DIRECTORY_SEPARATOR, [$rootPath, LANG_FOLDER]); // Output file path
+$outputFilePathAdmin = implode(DIRECTORY_SEPARATOR, [$rootPath, ADMIN_FOLDER, LANG_FOLDER]); // Output file path
 
 // Create the TranslationService instance.
 $translationService = new TranslationService();
-$translationService->setBaseLanguagePath($outputFilePathSite)->setBaseAdminLanguagePath($outputFilePathAdmin)->setComponentName($componentName);
+$translationService->setBaseLanguagePath($outputFilePathSite)
+                    ->setBaseAdminLanguagePath($outputFilePathAdmin)
+                    ->setComponentName($componentName);
 $contentReplacer = new ContentReplacer($translationService, $logger);
 
 
-$requestCode = $_POST['code'] ?? '';
+$locale = $_POST['code'] ?? '';
 $requestFileName = $_POST['file'] ?? '';
-$locale = $requestCode;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($requestCode)) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($locale)) {
     echo "<div class='container'><div class='error'>Invalid request! code parameter missing</div></div>";
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($requestFileName)) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($locale)) {
     $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
     $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
     $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.sys.ini')->replaceContent($inputFilePathAdminSys, $locale, $outputFilePathAdmin, true);

@@ -20,8 +20,13 @@ class ContentReplacer {
 
     public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir, bool $isAdmin = false): void {
         // Get translations for the current locale and admin files
-        $translations = $this->translationService->getTranslations($locale);
-        $adminTranslations = $this->translationService->getAdminTranslations($locale);
+        $translations = [];
+        $adminTranslations = [];
+        if ($isAdmin) {
+            $adminTranslations = $this->translationService->getAdminTranslations($locale);
+        } else {
+            $translations = $this->translationService->getTranslations($locale);
+        }
 
         // Merge translations
         $allTranslations = array_merge($translations, $adminTranslations);
@@ -92,7 +97,7 @@ class ContentReplacer {
 
     private function tryResolveMissingKeys(array $missingKeys, string $locale, string $outputFilePath): array {
         $resolvedKeys = [];
-        $chunkSize = 5; // Adjust chunk size based on your server’s capacity
+        $chunkSize = 10; // Adjust chunk size based on your server’s capacity
     
         // Split the $missingKeys array into smaller chunks
         $chunks = array_chunk($missingKeys, $chunkSize, true);

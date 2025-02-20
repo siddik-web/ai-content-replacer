@@ -8,7 +8,7 @@ namespace App;
 class TranslationService
 {
     /**
-     * @var string Path to the public language files.
+     * @var string Path to the site language files.
      */
     private string $baseLanguagePath;
 
@@ -27,7 +27,7 @@ class TranslationService
     /**
      * Constructor to initialize paths for language files.
      *
-     * @param string $baseLanguagePath Path to the public language files. Defaults to /language.
+     * @param string $baseLanguagePath Path to the site language files. Defaults to /language.
      * @param string $baseAdminLanguagePath Path to the admin language files. Defaults to /administrator/language.
      */
     public function __construct(
