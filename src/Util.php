@@ -47,7 +47,7 @@ class Util
 
     public static function writeLog() : void
     {
-        $logger = new Logger('ollama_api');
+        $logger = self::createLogger();
 
         $logsPath = __DIR__ . '/logs';
 
@@ -61,5 +61,10 @@ class Util
 
     public static function constructFilePath($basePath, $langCode, $componentName, $extension) {
         return implode(DIRECTORY_SEPARATOR, [$basePath, $langCode . '.' . $componentName . $extension]);
+    }
+
+    public static function createLogger()
+    {
+        return new Logger('ollama_api');
     }
 }

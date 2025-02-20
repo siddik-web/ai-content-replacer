@@ -10,12 +10,14 @@ class TranslationService
     /**
      * @var string Path to the site language files.
      */
-    private string $baseLanguagePath;
+    private string $siteLanguagePath;
 
     /**
      * @var string Path to the admin language files.
      */
-    private string $baseAdminLanguagePath;
+    private string $adminLanguagePath;
+
+    private string $locale;
 
     /**
      * Component name
@@ -25,27 +27,14 @@ class TranslationService
     private string $componentName;
 
     /**
-     * Constructor to initialize paths for language files.
+     * Sets the base path for site language files.
      *
-     * @param string $baseLanguagePath Path to the site language files. Defaults to /language.
-     * @param string $baseAdminLanguagePath Path to the admin language files. Defaults to /administrator/language.
+     * @param string $path The new base path for site language files.
      */
-    public function __construct(
-        string $baseLanguagePath = __DIR__ . "/language",
-        string $baseAdminLanguagePath = __DIR__ . "/administrator/language"
-    ) {
-        $this->baseLanguagePath = $baseLanguagePath;
-        $this->baseAdminLanguagePath = $baseAdminLanguagePath;
-    }
-
-    /**
-     * Sets the base path for public language files.
-     *
-     * @param string $path The new base path for public language files.
-     */
-    public function setBaseLanguagePath(string $path): self
+    public function setSiteLanguagePath(string $path): self
     {
-        $this->baseLanguagePath = $path;
+        $this->siteLanguagePath = $path;
+
         return $this;
     }
 
@@ -54,9 +43,10 @@ class TranslationService
      *
      * @param string $path The new base path for admin language files.
      */
-    public function setBaseAdminLanguagePath(string $path): self
+    public function setAdminLanguagePath(string $path): self
     {
-        $this->baseAdminLanguagePath = $path;
+        $this->adminLanguagePath = $path;
+
         return $this;
     }
 
@@ -68,7 +58,7 @@ class TranslationService
      */
     public function getTranslations(string $locale): array
     {
-        return $this->loadTranslations($locale, false);
+        return $this->loadTranslations($locale);
     }
 
     /**
@@ -90,7 +80,7 @@ class TranslationService
      * @return array Associative array of translations.
      * @throws \RuntimeException If the translation file does not exist.
      */
-    private function loadTranslations(string $locale, bool $isAdmin): array
+    private function loadTranslations(string $locale, bool $isAdmin = false): array
     {
         $filePath = $this->generateFilePath($locale, $isAdmin);
 
@@ -110,7 +100,7 @@ class TranslationService
      */
     private function generateFilePath(string $locale, bool $isAdmin): string
     {
-        $basePath = $isAdmin ? $this->baseAdminLanguagePath : $this->baseLanguagePath;
+        $basePath = $isAdmin ? $this->adminLanguagePath : $this->siteLanguagePath;
         return "$basePath/$locale/{$locale}.{$this->getComponentName()}.ini";
     }
 
@@ -187,6 +177,27 @@ class TranslationService
     public function getComponentName(): string
     {
         return $this->componentName;
+    }
+
+    /**
+     * Retrieves the locale for translations.
+     *
+     * @return string The locale.
+     */
+    public function getLocale(): string
+    {
+        return $this->locale;
+    }
+
+    /**
+     * Sets the locale for translations.
+     *
+     * @param string $locale The locale.
+     */
+    public function setLocale(string $locale): self
+    {
+        $this->locale = $locale;
+        return $this;
     }
 }
 

@@ -145,15 +145,15 @@ $inputFilePathSite = Util::constructFilePath($langPath, $langCode, $componentNam
 $inputFilePathAdmin = Util::constructFilePath($langAdminPath, $langCode, $componentName, INI_EXTENSION);
 $inputFilePathAdminSys = Util::constructFilePath($langAdminPath, $langCode, $componentName, SYS_INI_EXTENSION);
 
-$outputFilePathSite = implode(DIRECTORY_SEPARATOR, [$rootPath, LANG_FOLDER]); // Output file path
-$outputFilePathAdmin = implode(DIRECTORY_SEPARATOR, [$rootPath, ADMIN_FOLDER, LANG_FOLDER]); // Output file path
+$siteLanguagePath = implode(DIRECTORY_SEPARATOR, [$rootPath, LANG_FOLDER]); // Output file path
+$adminLanguagePath = implode(DIRECTORY_SEPARATOR, [$rootPath, ADMIN_FOLDER, LANG_FOLDER]); // Output file path
 
 // Create the TranslationService instance.
 $translationService = new TranslationService();
-$translationService->setBaseLanguagePath($outputFilePathSite)
-                    ->setBaseAdminLanguagePath($outputFilePathAdmin)
-                    ->setComponentName($componentName);
-$contentReplacer = new ContentReplacer($translationService, $logger);
+$translationService->setComponentName($componentName)
+                    ->setSiteLanguagePath($siteLanguagePath)
+                    ->setAdminLanguagePath($adminLanguagePath);
+$contentReplacer = new ContentReplacer($translationService, Util::createLogger());
 
 
 $locale = $_POST['code'] ?? '';
@@ -165,20 +165,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($locale)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($locale)) {
-    $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
-    $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
-    $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.sys.ini')->replaceContent($inputFilePathAdminSys, $locale, $outputFilePathAdmin, true);
+    $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathSite, $locale, $siteLanguagePath);
+    $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathAdmin, $locale, $adminLanguagePath);
+    $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.sys.ini')->replaceContent($inputFilePathAdminSys, $locale, $adminLanguagePath, true);
 }
 
 switch ($requestFileName) {
     case 'site':
-        $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathSite, $locale, $outputFilePathSite);
+        $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathSite, $locale, $siteLanguagePath);
         break;
     case 'admin':
-        $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathAdmin, $locale, $outputFilePathAdmin);
+        $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.ini')->replaceContent($inputFilePathAdmin, $locale, $adminLanguagePath);
         break;
     case 'sys':
-        $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.sys.ini')->replaceContent($inputFilePathAdminSys, $locale, $outputFilePathAdmin, true);
+        $contentReplacer->setOutputFileName($locale . '.com_sppagebuilder.sys.ini')->replaceContent($inputFilePathAdminSys, $locale, $adminLanguagePath, true);
         break;
 
 }
