@@ -17,6 +17,9 @@ class TranslationService
      */
     private string $adminLanguagePath;
 
+    /**
+     * @var string Locale.
+     */
     private string $locale;
 
     /**
@@ -25,6 +28,13 @@ class TranslationService
      * @var string
      */
     private string $componentName;
+
+    /**
+     * Cache for loaded translation files
+     *
+     * @var array
+     */
+    private array $cache = [];
 
     /**
      * Sets the base path for site language files.
@@ -51,28 +61,6 @@ class TranslationService
     }
 
     /**
-     * Retrieves translations for the specified locale.
-     *
-     * @param string $locale The locale for which to load translations.
-     * @return array Associative array of translations.
-     */
-    public function getTranslations(string $locale): array
-    {
-        return $this->loadTranslations($locale);
-    }
-
-    /**
-     * Retrieves admin translations for the specified locale.
-     *
-     * @param string $locale The locale for which to load admin translations.
-     * @return array Associative array of admin translations.
-     */
-    public function getAdminTranslations(string $locale): array
-    {
-        return $this->loadTranslations($locale, true);
-    }
-
-    /**
      * Loads and parses translations from a file based on locale and context.
      *
      * @param string $locale The locale of the translations.
@@ -80,15 +68,20 @@ class TranslationService
      * @return array Associative array of translations.
      * @throws \RuntimeException If the translation file does not exist.
      */
-    private function loadTranslations(string $locale, bool $isAdmin = false): array
+    public function loadTranslations(string $locale, bool $isAdmin = false, $isSystemFile = false): array
     {
-        $filePath = $this->generateFilePath($locale, $isAdmin);
+        $cacheKey = $this->getCacheKey($locale, $isAdmin);
 
-        if (!file_exists($filePath)) {
-            throw new \RuntimeException("Translation file not found: $filePath");
+        if (isset($this->cache[$cacheKey])) {
+            return $this->cache[$cacheKey];
         }
 
-        return $this->parseTranslationsFromFile($filePath);
+        $filePath = $this->generateFilePath($locale, $isAdmin, $isSystemFile);
+        $translations = $this->parseTranslationsFromFile($filePath);
+        
+        $this->cache[$cacheKey] = $translations;
+        
+        return $translations;
     }
 
     /**
@@ -98,10 +91,17 @@ class TranslationService
      * @param bool $isAdmin Whether to load the admin language file path.
      * @return string The generated file path for the translation file.
      */
-    private function generateFilePath(string $locale, bool $isAdmin): string
+    private function generateFilePath(string $locale, bool $isAdmin, $isSystemFile = false): string
     {
         $basePath = $isAdmin ? $this->adminLanguagePath : $this->siteLanguagePath;
-        return "$basePath/$locale/{$locale}.{$this->getComponentName()}.ini";
+
+        $fileExtension  = 'ini';
+
+        if ($isAdmin) {
+            $fileExtension = $isSystemFile ? 'sys.ini' : 'ini';
+        }
+
+        return "$basePath/$locale/{$locale}.{$this->getComponentName()}." . $fileExtension;
     }
 
     /**
@@ -112,20 +112,30 @@ class TranslationService
      */
     private function parseTranslationsFromFile(string $filePath): array
     {
-        $translations = [];
-        $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (!file_exists($filePath)) {
+            throw new \RuntimeException("Translation file not found: $filePath");
+        }
 
-        foreach ($lines as $line) {
+        $translations = [];
+        $handle = fopen($filePath, 'r');
+        
+        if ($handle === false) {
+            throw new \RuntimeException("Unable to open file: $filePath");
+        }
+        
+        while (($line = fgets($handle)) !== false) {
             if ($this->isCommentOrEmpty($line)) {
                 continue;
             }
-
+            
             $parsed = $this->parseLine($line);
             if ($parsed) {
                 [$key, $value] = $parsed;
                 $translations[$key] = $value;
             }
         }
+        
+        fclose($handle);
 
         return $translations;
     }
@@ -134,6 +144,7 @@ class TranslationService
      * Checks if a line is a comment or an empty line.
      *
      * @param string $line The line to check.
+     * 
      * @return bool True if the line is a comment or empty, otherwise false.
      */
     private function isCommentOrEmpty(string $line): bool
@@ -145,6 +156,7 @@ class TranslationService
      * Parses a line in the INI format for key-value pairs.
      *
      * @param string $line The line to parse.
+     * 
      * @return array|null Array containing the key and value if parsed, otherwise null.
      */
     private function parseLine(string $line): ?array
@@ -162,6 +174,8 @@ class TranslationService
      * Sets the component name for translations.
      *
      * @param string $componentName The component name.
+     * 
+     * @return self
      */
     public function setComponentName(string $componentName): self
     {
@@ -173,6 +187,8 @@ class TranslationService
      * Retrieves the component name for translations.
      *
      * @return string The component name.
+     * 
+     * @return self
      */
     public function getComponentName(): string
     {
@@ -183,6 +199,8 @@ class TranslationService
      * Retrieves the locale for translations.
      *
      * @return string The locale.
+     * 
+     * @return self
      */
     public function getLocale(): string
     {
@@ -193,11 +211,24 @@ class TranslationService
      * Sets the locale for translations.
      *
      * @param string $locale The locale.
+     * 
+     * @return self
      */
     public function setLocale(string $locale): self
     {
         $this->locale = $locale;
         return $this;
+    }
+
+    /**
+     * Returns the cache key for a given locale and admin status.
+     * 
+     * @param string $locale The locale.
+     * 
+     * @return string The cache key.
+     */
+    private function getCacheKey(string $locale, bool $isAdmin): string {
+        return $locale . ($isAdmin ? '_admin' : '_site');
     }
 }
 

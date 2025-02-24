@@ -19,27 +19,28 @@ class ContentReplacer {
     }
 
     public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir, bool $isAdmin = false): void {
-        // Get translations for the current locale and admin files
-        $translations = [];
-        $adminTranslations = [];
+
+        $isSystemFile = false;
+
         if ($isAdmin) {
-            $adminTranslations = $this->translationService->getAdminTranslations($locale);
-        } else {
-            $translations = $this->translationService->getTranslations($locale);
+           $isSystemFile = strpos($inputFilePath, '.sys.ini') !== false;
         }
 
-        // Merge translations
-        $allTranslations = array_merge($translations, $adminTranslations);
+        $translations = $this->translationService->loadTranslations($locale, $isAdmin, $isSystemFile);
+        $baseTranslations = $this->translationService->loadTranslations('en-GB', $isAdmin, $isSystemFile);
 
-        // Read the input file
-        $fileContent = file_get_contents($inputFilePath);
-        $lines = explode("\n", $fileContent);
+        $keys = array_keys($translations);
+
+        $missingKeys = array_filter($baseTranslations, function($key) use ($keys){
+            return !array_key_exists($key, $keys);
+        });
 
         // Define output directory and file paths
         $localeOutputDir = $outputBaseDir . "/$locale";
         if (!is_dir($localeOutputDir)) {
             mkdir($localeOutputDir, 0777, true);
         }
+
         $outputFilePath = $localeOutputDir . "/" . $this->getOutputFileName();
         $missingKeysFilePath = "$localeOutputDir/missing_keys.ini";
 
@@ -47,6 +48,10 @@ class ContentReplacer {
         $updatedLines = [];
         $missingKeys = [];
         $replacementsMade = false;  // Flag to track if any replacements were made
+
+        // Read the input file
+        $fileContent = file_get_contents($inputFilePath);
+        $lines = explode("\n", $fileContent);
 
         // Process each line
         foreach ($lines as $line) {
@@ -56,8 +61,8 @@ class ContentReplacer {
                 $originalValue = trim($matches[2]);
 
                 // Replace key if found in translations, else mark as missing with value
-                if (array_key_exists($key, $allTranslations)) {
-                    $newValue = $allTranslations[$key];
+                if (array_key_exists($key, $translations)) {
+                    $newValue = $translations[$key];
                     $pattern = '/(' . preg_quote($key, '/') . '=")([^"]*)(")/';
                     $updatedLine = preg_replace($pattern, '${1}' . $newValue . '${3}', $line);
                     $replacementsMade = true;  // Set flag to true if replacement occurred
