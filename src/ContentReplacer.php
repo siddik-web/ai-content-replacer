@@ -1,7 +1,4 @@
 <?php
-/**
- * TranslationService handles the loading and parsing of translation files.
- */
 
 namespace App;
 
@@ -12,152 +9,155 @@ class ContentReplacer {
     private $translationService;
     private $ollamaApi;
     private $outputFileName;
+    private $logger;
 
     public function __construct(TranslationService $translationService, LoggerInterface $logger) {
         $this->translationService = $translationService;
         $this->ollamaApi = OllamaApi::getInstance($logger);
+        $this->logger = $logger;
     }
 
-    public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir, bool $isAdmin = false): void {
+    /**
+     * Replace content in translation files based on the given locale.
+     *
+     * @param string $inputFilePath Path to the input file
+     * @param string $locale Locale to translate into
+     * @param string $outputBaseDir Base directory for output files
+     * @param bool $isAdmin Whether the file is for admin use
+     * @return bool True if successful, false otherwise
+     */
+    public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir, bool $isAdmin = false): bool {
+        try {
+            $isSystemFile = $isAdmin && strpos($inputFilePath, '.sys.ini') !== false;
 
-        $isSystemFile = false;
+            // Load translations for the target locale and base locale (en-GB)
+            $translations = $this->translationService->loadTranslations($locale, $isAdmin, $isSystemFile);
+            $baseTranslations = $this->translationService->loadTranslations('en-GB', $isAdmin, $isSystemFile);
 
-        if ($isAdmin) {
-           $isSystemFile = strpos($inputFilePath, '.sys.ini') !== false;
-        }
+            // Find missing translations in the target locale
+            $missingTranslations = array_diff_key($baseTranslations, $translations);
 
-        $translations = $this->translationService->loadTranslations($locale, $isAdmin, $isSystemFile);
-        $baseTranslations = $this->translationService->loadTranslations('en-GB', $isAdmin, $isSystemFile);
+            // Translate missing keys
+            $translatedMissingKeys = [];
+            $replacementsMade = false;
 
-        $keys = array_keys($translations);
+            foreach ($missingTranslations as $key => $value) {
+                $translatedValue = $this->getTranslatedValue($value, $locale);
 
-        $missingKeys = array_filter($baseTranslations, function($key) use ($keys){
-            return !array_key_exists($key, $keys);
-        });
-
-        // Define output directory and file paths
-        $localeOutputDir = $outputBaseDir . "/$locale";
-        if (!is_dir($localeOutputDir)) {
-            mkdir($localeOutputDir, 0777, true);
-        }
-
-        $outputFilePath = $localeOutputDir . "/" . $this->getOutputFileName();
-        $missingKeysFilePath = "$localeOutputDir/missing_keys.ini";
-
-        // Initialize arrays for updated lines and missing keys
-        $updatedLines = [];
-        $missingKeys = [];
-        $replacementsMade = false;  // Flag to track if any replacements were made
-
-        // Read the input file
-        $fileContent = file_get_contents($inputFilePath);
-        $lines = explode("\n", $fileContent);
-
-        // Process each line
-        foreach ($lines as $line) {
-            $updatedLine = $line;
-            if (preg_match('/^([^=]+)="([^"]*)"$/', trim($line), $matches)) {
-                $key = trim($matches[1]);
-                $originalValue = trim($matches[2]);
-
-                // Replace key if found in translations, else mark as missing with value
-                if (array_key_exists($key, $translations)) {
-                    $newValue = $translations[$key];
-                    $pattern = '/(' . preg_quote($key, '/') . '=")([^"]*)(")/';
-                    $updatedLine = preg_replace($pattern, '${1}' . $newValue . '${3}', $line);
-                    $replacementsMade = true;  // Set flag to true if replacement occurred
+                if ($translatedValue !== null) {
+                    $translatedMissingKeys[$key] = $translatedValue;
+                    $replacementsMade = true;
+                    $this->logger->info("Translated key '$key' for locale '$locale': '$translatedValue'");
                 } else {
-                    // Store the missing key with its original value
-                    $missingKeys[$key] = $originalValue;
+                    $this->logger->warning("Failed to translate key '$key' for locale '$locale'");
                 }
             }
-            $updatedLines[] = $updatedLine;
+
+            // If no replacements were made, exit early
+            if (!$replacementsMade) {
+                $this->logger->info("No missing translations found for locale '$locale'. Skipping file update.");
+                return true; // No updates needed, but no errors occurred
+            }
+
+            // Merge translated missing keys with existing translations
+            $updatedLines = array_merge($translations, $translatedMissingKeys);
+
+            // Define output directory and file paths
+            $localeOutputDir = $outputBaseDir . "/$locale";
+            if (!is_dir($localeOutputDir)) {
+                mkdir($localeOutputDir, 0777, true);
+                $this->logger->info("Created directory: '$localeOutputDir'");
+            }
+
+            $outputFilePath = $localeOutputDir . "/" . $this->getOutputFileName();
+
+            // Append updated content to the output file
+            if (!$this->appendToFile($updatedLines, $outputFilePath)) {
+                $this->logger->error("Failed to append translations to file: '$outputFilePath'");
+                return false; // Indicate failure
+            }
+
+            $this->logger->info("Successfully appended translations to file: '$outputFilePath'");
+            return true; // Indicate success
+        } catch (\Exception $e) {
+            $this->logger->error("Error during translation process: " . $e->getMessage());
+            return false; // Indicate failure
         }
+    }
 
-        // If no replacements were made, exit early and do not create or update files
-        if (!$replacementsMade) {
-            echo "No replacements found for locale $locale. Skipping file creation.\n";
-            return;
+    /**
+     * Get the translated value for a given key using the Ollama API.
+     *
+     * @param string $value The value to translate
+     * @param string $locale The target locale
+     * @return string|null The translated value or null if translation fails
+     */
+    private function getTranslatedValue(string $value, string $locale): ?string {
+        try {
+            return $this->ollamaApi->getResponse($value, $locale);
+        } catch (\Exception $e) {
+            $this->logger->error("Error translating value '$value' for locale '$locale': " . $e->getMessage());
+            return null;
         }
+    }
 
-        // Write the updated content to the output file
-        $this->writeToFile(implode("\n", $updatedLines), $outputFilePath);
-
-        // If missing keys are found, log them with values
-        if (!empty($missingKeys)) {
-            // Try to resolve missing keys from admin translations and update the content
-            $resolvedKeys = $this->tryResolveMissingKeys($missingKeys, $locale, $outputFilePath);
-
-            // Update the missing keys file dynamically with remaining missing keys
-            $remainingMissingKeys = array_diff_key($missingKeys, $resolvedKeys);
-            if (!empty($remainingMissingKeys)) {
-                $this->writeMissingKeysToFile($remainingMissingKeys, $missingKeysFilePath);
-            } else {
-                if (file_exists($missingKeysFilePath)) {
-                    unlink($missingKeysFilePath); // Remove the missing keys file if all keys are resolved
+    /**
+     * Append content to a file, avoiding duplicate keys.
+     *
+     * @param array $content Array of key-value pairs to append
+     * @param string $filePath Path to the output file
+     * @return bool True if successful, false otherwise
+     */
+    private function appendToFile(array $content, string $filePath): bool {
+        try {
+            // Read existing content from the file if it exists
+            $existingContent = [];
+            if (file_exists($filePath)) {
+                $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+                foreach ($lines as $line) {
+                    list($key, $value) = explode('=', $line, 2);
+                    $existingContent[trim($key)] = trim($value);
                 }
             }
-        }
-    }
 
-    private function tryResolveMissingKeys(array $missingKeys, string $locale, string $outputFilePath): array {
-        $resolvedKeys = [];
-        $chunkSize = 10; // Adjust chunk size based on your server’s capacity
-    
-        // Split the $missingKeys array into smaller chunks
-        $chunks = array_chunk($missingKeys, $chunkSize, true);
-        echo "<div class='container'>";
-        echo "<h1>Resolved Missing Key List For Locale: $locale</h1>";
-        echo "<ul>";
-        foreach ($chunks as $chunk) {
-            foreach ($chunk as $key => $originalValue) {
-                // Use Ollama API to get translation for the missing key
-                $newValue = $this->ollamaApi->getResponse($originalValue, $locale);
-    
-                if ($newValue !== null) {
-                    // Update the output file with the new value
-                    $fileContent = file_get_contents($outputFilePath);
-                    $pattern = '/(' . preg_quote($key, '/') . '=")([^"]*)(")/';
-                    $updatedContent = preg_replace($pattern, '${1}' . $newValue . '${3}', $fileContent);
-                    file_put_contents($outputFilePath, $updatedContent);
-                    $resolvedKeys[$key] = $newValue;
-                    
-                    echo "<li><strong>$key</strong>:" . $newValue . "</li>";
+            // Open the file in append mode
+            $file = fopen($filePath, 'a');
+            if (!$file) {
+                throw new \RuntimeException("Unable to open file for appending: '$filePath'");
+            }
+
+            // Append only the new translations to the file
+            foreach ($content as $key => $value) {
+                if (!isset($existingContent[$key])) {
+                    fwrite($file, "$key=\"$value\"" . PHP_EOL);
+                    $this->logger->info("Appended new translation to file: '$key=$value'");
                 }
             }
-    
-            // Optional: Add a short sleep to reduce load on the API and server
-            // sleep(2); // Adjust delay if needed
-        }
 
-        echo "</ul>";
-        echo "</div>";
-    
-        return $resolvedKeys;
-    }
-    
-
-    private function writeToFile(string $content, string $filePath): void
-    {
-        $result = file_put_contents($filePath, $content);
-        if ($result === false) {
-            throw new \RuntimeException("Failed to write to file: $filePath");
+            fclose($file);
+            return true; // Indicate success
+        } catch (\Exception $e) {
+            $this->logger->error("Error appending to file '$filePath': " . $e->getMessage());
+            return false; // Indicate failure
         }
     }
 
-    private function writeMissingKeysToFile(array $missingKeys, string $filePath): void {
-        $content = '';
-        foreach ($missingKeys as $key => $value) {
-            $content .= "$key=\"$value\"\n"; // Write in key="value" format
-        }
-        $this->writeToFile($content, $filePath);
-    }
-
+    /**
+     * Set the output file name.
+     *
+     * @param string $outputFileName The name of the output file
+     * @return self
+     */
     public function setOutputFileName(string $outputFileName): self {
         $this->outputFileName = $outputFileName;
         return $this;
     }
 
+    /**
+     * Get the output file name.
+     *
+     * @return string
+     */
     public function getOutputFileName(): string {
         return $this->outputFileName;
     }

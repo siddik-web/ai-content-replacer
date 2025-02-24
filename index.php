@@ -83,7 +83,7 @@
 <body>
     <div class="container">
         <h1>Translate Language - Ollama Translate Language</h1>
-        <form action="main.php" method="post">
+        <form action="main.php" method="post" id="translationForm">
             <div class="form-group">
                 <label for="code">Code:</label>
                 <input type="text" id="code" name="code" value="">
@@ -102,6 +102,48 @@
             </div>
         </form>
     </div>
+    <div class="container">
+        <h3>Result</h3>
+        <div id="result"></div>
+    </div>
+    <script>
+        document.getElementById('translationForm').addEventListener('submit', async function (event) {
+            event.preventDefault(); // Prevent form submission
+
+            const formData = {
+                code: document.getElementById('code').value,
+                file: document.getElementById('file').value,
+            };
+
+            try {
+                // Make the fetch API call
+                const response = await fetch('main.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.json();
+
+                // Display the result to the user
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = ''; // Clear previous content
+
+                if (result.status === 'success') {
+                    resultDiv.innerHTML = `
+                        <p class="success">${result.message}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">${result.message}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `<p class="error">An unexpected error occurred.</p>`;
+            }
+        });
+    </script>
 </body>
 </html>
 

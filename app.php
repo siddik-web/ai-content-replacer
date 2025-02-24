@@ -59,7 +59,7 @@ class TranslationApp {
         return implode(DIRECTORY_SEPARATOR, array_merge([$this->rootPath], $segments));
     }
     
-    public function processTranslation(string $locale, ?string $requestFileName = null): void {
+    public function processTranslation(string $locale, ?string $requestFileName = null): bool {
         if (empty($locale)) {
             throw new InvalidArgumentException('Invalid request! code parameter missing');
         }
@@ -67,9 +67,9 @@ class TranslationApp {
         $paths = $this->constructPaths();
         
         if ($requestFileName === null) {
-            $this->processAllFiles($locale, $paths);
+            return $this->processAllFiles($locale, $paths);
         } else {
-            $this->processSingleFile($locale, $requestFileName, $paths);
+            return$this->processSingleFile($locale, $requestFileName, $paths);
         }
     }
     
@@ -93,23 +93,23 @@ class TranslationApp {
         ];
     }
     
-    private function processAllFiles(string $locale, array $paths): void {
+    private function processAllFiles(string $locale, array $paths): bool {
         foreach ($paths as $type => $path) {
-            $this->processFile($locale, $type, $path);
+            return $this->processFile($locale, $type, $path);
         }
     }
     
-    private function processSingleFile(string $locale, string $requestFileName, array $paths): void {
+    private function processSingleFile(string $locale, string $requestFileName, array $paths): bool {
         if (!isset($paths[$requestFileName])) {
             throw new InvalidArgumentException('Invalid file type specified');
         }
         
-        $this->processFile($locale, $requestFileName, $paths[$requestFileName]);
+        return $this->processFile($locale, $requestFileName, $paths[$requestFileName]);
     }
     
-    private function processFile(string $locale, string $type, array $path): void {
+    private function processFile(string $locale, string $type, array $path): bool {
         $outputFileName = $locale . '.com_sppagebuilder' . ($type === 'sys' ? '.sys' : '') . '.ini';
-        $this->contentReplacer
+        return $this->contentReplacer
             ->setOutputFileName($outputFileName)
             ->replaceContent(
                 $path['input'],
