@@ -121,9 +121,11 @@ class ContentReplacer {
             if (file_exists($filePath)) {
                 $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                 foreach ($lines as $line) {
-                    list($key, $value) = explode('=', $line, 2);
-                    if (!empty($key) && !empty($value)) {
-                        $existingContent[trim($key)] = trim($value);
+                    if (!empty($line)) {
+                        list($key, $value) = explode('=', $line, 2);
+                        if (!empty($key) && !empty($value)) {
+                            $existingContent[trim($key)] = trim($value);
+                        }
                     }
                 }
             }

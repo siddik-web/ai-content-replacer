@@ -76,7 +76,7 @@ class OllamaApi
     private function buildTranslationPrompt(string $text, string $locale): string
     {
         return <<<PROMPT
-        Translate the following English text into $locale and return only the translation in exact format not additional text, formatting, explanations or notes, also don't ask me for any additional questions just give me the exact answer only. Ensure technical terms like 'None', 'CSS', 'Remove', 'No Repeat', 'ID', Single Alphabet remain in English where appropriate, as they are commonly used in $locale technical contexts. don't add any quotation: $text
+        Translate the following English text: "$text" into $locale and return only the translation in exact format not additional text, formatting, explanations or notes, also don't ask me for any additional questions just give me the exact answer only. Ensure technical terms like 'None', 'CSS', 'Remove', 'No Repeat', 'ID', Single Alphabet remain in English where appropriate, as they are commonly used in $locale technical contexts. don't add any quotation.
         PROMPT;
     }
 
