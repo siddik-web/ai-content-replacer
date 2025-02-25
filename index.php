@@ -173,6 +173,10 @@
 
             if (!isValid) return;
 
+            // Display the result to the user
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = ''; // Clear previous content
+
             // Disable the submit button and show the loading state
             const submitButton = document.getElementById('submitButton');
             const loadingSpinner = document.getElementById('loadingSpinner');
@@ -195,10 +199,6 @@
                 });
 
                 const result = await response.json();
-
-                // Display the result to the user
-                const resultDiv = document.getElementById('result');
-                resultDiv.innerHTML = ''; // Clear previous content
 
                 if (result.status === 'success') {
                     resultDiv.innerHTML = `<p class="success">${result.message}</p>`;
