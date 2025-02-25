@@ -1,7 +1,7 @@
 <?php
 
 ini_set('max_execution_time', 3000);
-ini_set('memory_limit', '256M'); // Set appropriate memory limit
+ini_set('memory_limit', '512M'); // Set appropriate memory limit
 require_once './vendor/autoload.php';
 
 use App\ContentReplacer;
