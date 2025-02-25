@@ -1,5 +1,4 @@
 <?php
-
 namespace App;
 
 use App\OllamaApi;
@@ -28,6 +27,16 @@ class ContentReplacer {
      */
     public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir, bool $isAdmin = false): bool {
         try {
+
+            // Define output directory and file paths
+            $localeOutputDir = $outputBaseDir . "/$locale";
+            if (!is_dir($localeOutputDir)) {
+                mkdir($localeOutputDir, 0777, true);
+                $this->logger->info("Created directory: '$localeOutputDir'");
+            }
+
+            $outputFilePath = $localeOutputDir . "/" . $this->getOutputFileName();
+
             $isSystemFile = $isAdmin && strpos($inputFilePath, '.sys.ini') !== false;
 
             // Load translations for the target locale and base locale (en-GB)
@@ -37,16 +46,20 @@ class ContentReplacer {
             // Find missing translations in the target locale
             $missingTranslations = array_diff_key($baseTranslations, $translations);
 
-            // Translate missing keys
+            // Translate missing keys in batches
             $translatedMissingKeys = [];
             $replacementsMade = false;
-
+            
             foreach ($missingTranslations as $key => $value) {
-                $translatedValue = $this->getTranslatedValue($value, $locale);
-
+                $translatedValue = $this->getTranslatedValueWithRetry($value, $locale);
                 if ($translatedValue !== null) {
                     $translatedMissingKeys[$key] = $translatedValue;
                     $replacementsMade = true;
+
+                    if (!$this->appendToFile($translatedMissingKeys, $outputFilePath)) {
+                        $this->logger->error("Failed to append translations to file: '$outputFilePath'");
+                        continue;
+                    }
                     $this->logger->info("Translated key '$key' for locale '$locale': '$translatedValue'");
                 } else {
                     $this->logger->warning("Failed to translate key '$key' for locale '$locale'");
@@ -59,24 +72,6 @@ class ContentReplacer {
                 return true; // No updates needed, but no errors occurred
             }
 
-            // Merge translated missing keys with existing translations
-            $updatedLines = array_merge($translations, $translatedMissingKeys);
-
-            // Define output directory and file paths
-            $localeOutputDir = $outputBaseDir . "/$locale";
-            if (!is_dir($localeOutputDir)) {
-                mkdir($localeOutputDir, 0777, true);
-                $this->logger->info("Created directory: '$localeOutputDir'");
-            }
-
-            $outputFilePath = $localeOutputDir . "/" . $this->getOutputFileName();
-
-            // Append updated content to the output file
-            if (!$this->appendToFile($updatedLines, $outputFilePath)) {
-                $this->logger->error("Failed to append translations to file: '$outputFilePath'");
-                return false; // Indicate failure
-            }
-
             $this->logger->info("Successfully appended translations to file: '$outputFilePath'");
             return true; // Indicate success
         } catch (\Exception $e) {
@@ -86,19 +81,30 @@ class ContentReplacer {
     }
 
     /**
-     * Get the translated value for a given key using the Ollama API.
+     * Get the translated value for a given key using the Ollama API with retries.
      *
      * @param string $value The value to translate
      * @param string $locale The target locale
      * @return string|null The translated value or null if translation fails
      */
-    private function getTranslatedValue(string $value, string $locale): ?string {
-        try {
-            return $this->ollamaApi->getResponse($value, $locale);
-        } catch (\Exception $e) {
-            $this->logger->error("Error translating value '$value' for locale '$locale': " . $e->getMessage());
-            return null;
+    private function getTranslatedValueWithRetry(string $value, string $locale): ?string {
+        $maxRetries = 3;
+        $retryDelay = 2; // seconds
+
+        for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
+            try {
+                // Set a timeout for the API call (e.g., 10 seconds)
+                return $this->ollamaApi->getResponse($value, $locale);
+            } catch (\Exception $e) {
+                $this->logger->warning("Attempt $attempt failed for value '$value' in locale '$locale': " . $e->getMessage());
+                if ($attempt < $maxRetries) {
+                    sleep($retryDelay); // Wait before retrying
+                }
+            }
         }
+
+        $this->logger->error("All attempts failed for value '$value' in locale '$locale'");
+        return null; // Return null if all retries fail
     }
 
     /**
@@ -108,7 +114,7 @@ class ContentReplacer {
      * @param string $filePath Path to the output file
      * @return bool True if successful, false otherwise
      */
-    private function appendToFile(array $content, string $filePath): bool {
+    private function appendToFile(array|string $content, string $filePath): bool {
         try {
             // Read existing content from the file if it exists
             $existingContent = [];

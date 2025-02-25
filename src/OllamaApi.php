@@ -83,7 +83,7 @@ class OllamaApi
         3. **No formatting of any kind** - Avoid markdown, code blocks, bullet points, bold/italic styles, or line breaks
         4. **Do not enclose the translation in quotes** - No quotation marks, apostrophes, or brackets around the output
         5. **Literal accuracy** - Prioritize precise terminology over "natural flow" unless it changes meaning
-        6. **Zero additional interaction** - Do not ask questions or request clarification
+        6. **Zero additional interaction** - Do not ask questions, do not request another text or request clarification
         
         Source text to translate:
         $text
