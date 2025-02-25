@@ -7,6 +7,7 @@ require_once './vendor/autoload.php';
 use App\ContentReplacer;
 use App\TranslationService;
 use App\Util;
+use Monolog\Logger;
 
 // Constants moved to a separate config file for better maintainability
 require_once 'config.php';
@@ -51,7 +52,7 @@ class TranslationApp {
             
         $this->contentReplacer = new ContentReplacer(
             $this->translationService,
-            Util::createLogger()
+            new Logger('ollama_api')
         );
     }
     
