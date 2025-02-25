@@ -122,7 +122,9 @@ class ContentReplacer {
                 $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                 foreach ($lines as $line) {
                     list($key, $value) = explode('=', $line, 2);
-                    $existingContent[trim($key)] = trim($value);
+                    if (!empty($key) && !empty($value)) {
+                        $existingContent[trim($key)] = trim($value);
+                    }
                 }
             }
 

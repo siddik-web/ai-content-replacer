@@ -76,19 +76,7 @@ class OllamaApi
     private function buildTranslationPrompt(string $text, string $locale): string
     {
         return <<<PROMPT
-        Translate the following text into $locale according to these strict requirements:
-        
-        1. **Output ONLY the translated text** - No explanations, disclaimers, or extra content before/after
-        2. **Preserve original meaning and context** - Maintain tone (formal/informal), idioms, and cultural references appropriately
-        3. **No formatting of any kind** - Avoid markdown, code blocks, bullet points, bold/italic styles, or line breaks
-        4. **Do not enclose the translation in quotes** - No quotation marks, apostrophes, or brackets around the output
-        5. **Literal accuracy** - Prioritize precise terminology over "natural flow" unless it changes meaning
-        6. **Zero additional interaction** - Do not ask questions, do not request another text or request clarification
-        
-        Source text to translate:
-        $text
-        
-        Translation response (exactly as specified):
+        Translate the following English text into $locale and return only the translation in exact format not additional text, formatting, explanations or notes, also don't ask me for any additional questions just give me the exact answer only. Ensure technical terms like 'None', 'CSS', 'Remove', 'No Repeat', 'ID', Single Alphabet remain in English where appropriate, as they are commonly used in $locale technical contexts. don't add any quotation: $text
         PROMPT;
     }
 
