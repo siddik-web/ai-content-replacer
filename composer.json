@@ -19,6 +19,8 @@
         "ardagnsrn/ollama-php": "dev-master",
         "monolog/monolog": "^3.0@dev",
         "symfony/cache": "7.3.x-dev",
-        "psr/simple-cache": "^3.0@dev"
+        "psr/simple-cache": "^3.0@dev",
+        "psr/log": "^3.0@dev",
+        "guzzlehttp/guzzle": "7.9.x-dev"
     }
 }
