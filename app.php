@@ -12,6 +12,9 @@ use Monolog\Logger;
 // Constants moved to a separate config file for better maintainability
 require_once 'config.php';
 
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->safeLoad();
+
 /**
  * TranslationApp Class
  * 
@@ -44,15 +47,20 @@ class TranslationApp {
         $siteLanguagePath = $this->buildPath(LANG_FOLDER);
         $adminLanguagePath = $this->buildPath(ADMIN_FOLDER, LANG_FOLDER);
         
+        $logger = Util::createLogger();
+        
         $this->translationService = new TranslationService();
         $this->translationService
             ->setComponentName($this->componentName)
             ->setSiteLanguagePath($siteLanguagePath)
             ->setAdminLanguagePath($adminLanguagePath);
             
+        $ollamaApi = new App\OllamaApi($logger);
+            
         $this->contentReplacer = new ContentReplacer(
             $this->translationService,
-            new Logger('ollama_api')
+            $ollamaApi,
+            $logger
         );
     }
     

@@ -10,9 +10,9 @@ class ContentReplacer {
     private $outputFileName;
     private $logger;
 
-    public function __construct(TranslationService $translationService, LoggerInterface $logger) {
+    public function __construct(TranslationService $translationService, OllamaApi $ollamaApi, LoggerInterface $logger) {
         $this->translationService = $translationService;
-        $this->ollamaApi = OllamaApi::getInstance($logger);
+        $this->ollamaApi = $ollamaApi;
         $this->logger = $logger;
     }
 

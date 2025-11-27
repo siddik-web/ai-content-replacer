@@ -1,0 +1,1 @@
+{"version":2,"defects":[],"times":{"Tests\\OllamaApiTest::testGetResponseReturnsTranslation":0.008,"Tests\\TranslationServiceTest::testSetAndGetPaths":0}}

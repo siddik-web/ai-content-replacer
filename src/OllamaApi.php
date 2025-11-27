@@ -8,27 +8,18 @@ use App\Exceptions\TimeoutException;
 class OllamaApi
 {
     private Ollama $client;
-    private static ?self $instance = null;
     private LoggerInterface $logger;
 
-    private function __construct(LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger)
     {
         $this->client = Ollama::client();
         $this->logger = $logger;
     }
 
-    public static function getInstance(LoggerInterface $logger): self
-    {
-        if (self::$instance === null) {
-            self::$instance = new self($logger);
-        }
-        return self::$instance;
-    }
-
     public function getResponse(
         string $text,
         string $locale,
-        string $model = "gemma2",
+        string $model = "gemma3",
         float $temperature = 0.0,
         int $maxTokens = 300,
         ?int $timeout = 20,
@@ -112,10 +103,5 @@ class OllamaApi
             $waitTime = $initialBackoff * (2 ** $attempt);
             sleep($waitTime);
         }
-    }
-
-    public static function resetInstance(): void
-    {
-        self::$instance = null;
     }
 }

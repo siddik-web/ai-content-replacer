@@ -12,7 +12,17 @@ try {
         throw new InvalidArgumentException('Code and file parameters are required');
     }
 
-    $translationApp = new TranslationApp('/Users/siddiqur/Sites/sppb5');
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+    $dotenv->safeLoad();
+
+    $projectPath = isset($input->projectPath) && !empty($input->projectPath) ? $input->projectPath : ($_ENV['PROJECT_PATH'] ?? '');
+    $componentName = isset($input->componentName) && !empty($input->componentName) ? $input->componentName : ($_ENV['COMPONENT_NAME'] ?? 'com_sppagebuilder');
+
+    if (empty($projectPath)) {
+        throw new InvalidArgumentException('Project path is required');
+    }
+
+    $translationApp = new TranslationApp($projectPath, $componentName);
     $success = $translationApp->processTranslation($requestCode, $requestFileName);
     if ($success) {
         // Return success response with updated content

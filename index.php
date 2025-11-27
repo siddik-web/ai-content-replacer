@@ -107,9 +107,27 @@
     </style>
 </head>
 <body>
+<?php
+    require_once 'vendor/autoload.php';
+    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+    $dotenv->safeLoad();
+    
+    $defaultProjectPath = $_ENV['PROJECT_PATH'] ?? '';
+    $defaultComponentName = $_ENV['COMPONENT_NAME'] ?? '';
+    ?>
     <div class="container">
         <h1>Translate Language - SP Page Builder</h1>
         <form action="main.php" method="post" id="translationForm">
+            <div>
+                <label for="projectPath">Project Path:</label>
+                <input type="text" name="projectPath" id="projectPath" value="<?php echo htmlspecialchars($defaultProjectPath); ?>" placeholder="/path/to/project">
+                <div id="projectPath-error" class="error"></div>
+            </div>
+            <div>
+                <label for="componentName">Component Name:</label>
+                <input type="text" name="componentName" id="componentName" value="<?php echo htmlspecialchars($defaultComponentName); ?>" placeholder="com_example">
+                <div id="componentName-error" class="error"></div>
+            </div>
             <div>
                 <label for="code">Language Code:</label>
                 <select name="code" id="code">
@@ -156,10 +174,14 @@
             // Clear previous errors
             document.getElementById('code-error').textContent = '';
             document.getElementById('file-error').textContent = '';
+            document.getElementById('projectPath-error').textContent = '';
+            document.getElementById('componentName-error').textContent = '';
 
             // Validate inputs
             const code = document.getElementById('code').value.trim();
             const file = document.getElementById('file').value.trim();
+            const projectPath = document.getElementById('projectPath').value.trim();
+            const componentName = document.getElementById('componentName').value.trim();
             let isValid = true;
 
             if (!code) {
@@ -168,6 +190,14 @@
             }
             if (!file) {
                 document.getElementById('file-error').textContent = 'Please select a file type.';
+                isValid = false;
+            }
+            if (!projectPath) {
+                document.getElementById('projectPath-error').textContent = 'Please enter a project path.';
+                isValid = false;
+            }
+            if (!componentName) {
+                document.getElementById('componentName-error').textContent = 'Please enter a component name.';
                 isValid = false;
             }
 
@@ -187,7 +217,7 @@
             loadingText.style.display = 'block';
 
             try {
-                const formData = { code, file };
+                const formData = { code, file, projectPath, componentName };
 
                 // Make the fetch API call
                 const response = await fetch('main.php', {

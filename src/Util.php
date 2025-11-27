@@ -45,14 +45,20 @@ class Util
         return $folders;
     }
 
+    public static function createLogger(string $name = 'ollama_api'): Logger
+    {
+        $logger = new Logger($name);
+        return $logger;
+    }
+
     public static function writeLog() : void
     {
         $logger = self::createLogger();
 
-        $logsPath = __DIR__ . '/logs';
+        $logsPath = dirname(__DIR__) . '/logs';
 
         if (!file_exists($logsPath)) {
-            mkdir($logsPath);
+            mkdir($logsPath, 0777, true);
         }
 
         $logsFile = $logsPath . '/ollama_api.log';
