@@ -1,0 +1,42 @@
+{
+  "name": "ai-content-replacer",
+  "version": "1.0.0",
+  "description": "Automated translation tool for Joomla language files using the Ollama API",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "npx playwright test",
+    "test:form": "npx playwright test form.spec.js",
+    "test:api": "npx playwright test api.spec.js",
+    "test:workflow": "npx playwright test workflow.spec.js",
+    "test:utils": "npx playwright test utils.spec.js",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:ui": "npx playwright test --ui",
+    "test:report": "npx playwright show-report",
+    "test:coverage": "npx playwright test --coverage"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siddik-web/ai-content-replacer.git"
+  },
+  "keywords": [
+    "joomla",
+    "translation",
+    "ollama",
+    "e2e-testing",
+    "playwright"
+  ],
+  "author": "Md Siddiqur Rahman <siddikcoder@gmail.com>",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/siddik-web/ai-content-replacer/issues"
+  },
+  "homepage": "https://github.com/siddik-web/ai-content-replacer#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}
