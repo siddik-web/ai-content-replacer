@@ -1,5 +1,30 @@
+# Dependencies
 composer.lock
-vendor
-.vscode
-logs
+vendor/
+node_modules/
+
+# IDE
+.vscode/
+
+# Logs
+logs/
+
+# OS
 .DS_Store
+
+# Environment
+.env
+.env.local
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+# PHPUnit
+.phpunit.result.cache
+
+# Build
+dist/
+build/
