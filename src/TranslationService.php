@@ -18,14 +18,7 @@ class TranslationService
     private string $adminLanguagePath;
 
     /**
-     * @var string Locale.
-     */
-    private string $locale;
-
-    /**
-     * Component name
-     *
-     * @var string
+     * @var string Component name
      */
     private string $componentName;
 
@@ -40,11 +33,11 @@ class TranslationService
      * Sets the base path for site language files.
      *
      * @param string $path The new base path for site language files.
+     * @return self
      */
     public function setSiteLanguagePath(string $path): self
     {
         $this->siteLanguagePath = $path;
-
         return $this;
     }
 
@@ -52,11 +45,11 @@ class TranslationService
      * Sets the base path for admin language files.
      *
      * @param string $path The new base path for admin language files.
+     * @return self
      */
     public function setAdminLanguagePath(string $path): self
     {
         $this->adminLanguagePath = $path;
-
         return $this;
     }
 
@@ -65,12 +58,13 @@ class TranslationService
      *
      * @param string $locale The locale of the translations.
      * @param bool $isAdmin Whether to load admin translations.
+     * @param bool $isSystemFile Whether to load system file translations.
      * @return array Associative array of translations.
      * @throws \RuntimeException If the translation file does not exist.
      */
-    public function loadTranslations(string $locale, bool $isAdmin = false, $isSystemFile = false): array
+    public function loadTranslations(string $locale, bool $isAdmin = false, bool $isSystemFile = false): array
     {
-        $cacheKey = $this->getCacheKey($locale, $isAdmin);
+        $cacheKey = $this->getCacheKey($locale, $isAdmin, $isSystemFile);
 
         if (isset($this->cache[$cacheKey])) {
             return $this->cache[$cacheKey];
@@ -89,13 +83,14 @@ class TranslationService
      *
      * @param string $locale The locale of the translations.
      * @param bool $isAdmin Whether to load the admin language file path.
+     * @param bool $isSystemFile Whether to load the system file.
      * @return string The generated file path for the translation file.
      */
-    private function generateFilePath(string $locale, bool $isAdmin, $isSystemFile = false): string
+    private function generateFilePath(string $locale, bool $isAdmin, bool $isSystemFile = false): string
     {
         $basePath = $isAdmin ? $this->adminLanguagePath : $this->siteLanguagePath;
 
-        $fileExtension  = 'ini';
+        $fileExtension = 'ini';
 
         if ($isAdmin) {
             $fileExtension = $isSystemFile ? 'sys.ini' : 'ini';
@@ -144,7 +139,6 @@ class TranslationService
      * Checks if a line is a comment or an empty line.
      *
      * @param string $line The line to check.
-     * 
      * @return bool True if the line is a comment or empty, otherwise false.
      */
     private function isCommentOrEmpty(string $line): bool
@@ -156,7 +150,6 @@ class TranslationService
      * Parses a line in the INI format for key-value pairs.
      *
      * @param string $line The line to parse.
-     * 
      * @return array|null Array containing the key and value if parsed, otherwise null.
      */
     private function parseLine(string $line): ?array
@@ -174,7 +167,6 @@ class TranslationService
      * Sets the component name for translations.
      *
      * @param string $componentName The component name.
-     * 
      * @return self
      */
     public function setComponentName(string $componentName): self
@@ -187,8 +179,6 @@ class TranslationService
      * Retrieves the component name for translations.
      *
      * @return string The component name.
-     * 
-     * @return self
      */
     public function getComponentName(): string
     {
@@ -196,39 +186,14 @@ class TranslationService
     }
 
     /**
-     * Retrieves the locale for translations.
-     *
-     * @return string The locale.
-     * 
-     * @return self
-     */
-    public function getLocale(): string
-    {
-        return $this->locale;
-    }
-
-    /**
-     * Sets the locale for translations.
-     *
-     * @param string $locale The locale.
-     * 
-     * @return self
-     */
-    public function setLocale(string $locale): self
-    {
-        $this->locale = $locale;
-        return $this;
-    }
-
-    /**
-     * Returns the cache key for a given locale and admin status.
+     * Returns the cache key for a given locale, admin status, and system file status.
      * 
      * @param string $locale The locale.
-     * 
+     * @param bool $isAdmin Whether it's an admin file.
+     * @param bool $isSystemFile Whether it's a system file.
      * @return string The cache key.
      */
-    private function getCacheKey(string $locale, bool $isAdmin): string {
-        return $locale . ($isAdmin ? '_admin' : '_site');
+    private function getCacheKey(string $locale, bool $isAdmin, bool $isSystemFile): string {
+        return $locale . ($isAdmin ? '_admin' : '_site') . ($isSystemFile ? '_sys' : '');
     }
 }
-

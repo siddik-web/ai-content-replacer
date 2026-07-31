@@ -15,5 +15,3 @@ define('LANG_FOLDER', 'language');
 define('ADMIN_FOLDER', 'administrator');
 define('INI_EXTENSION', '.ini');
 define('SYS_INI_EXTENSION', '.sys.ini');
-define('CHUNK_SIZE', 1000); // For processing large files
-define('CACHE_EXPIRY', 3600); // 1 hour cache expiry

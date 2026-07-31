@@ -78,7 +78,7 @@ class TranslationApp {
         if ($requestFileName === null) {
             return $this->processAllFiles($locale, $paths);
         } else {
-            return$this->processSingleFile($locale, $requestFileName, $paths);
+            return $this->processSingleFile($locale, $requestFileName, $paths);
         }
     }
     
@@ -103,9 +103,13 @@ class TranslationApp {
     }
     
     private function processAllFiles(string $locale, array $paths): bool {
+        $allSuccess = true;
         foreach ($paths as $type => $path) {
-            return $this->processFile($locale, $type, $path);
+            if (!$this->processFile($locale, $type, $path)) {
+                $allSuccess = false;
+            }
         }
+        return $allSuccess;
     }
     
     private function processSingleFile(string $locale, string $requestFileName, array $paths): bool {
@@ -117,14 +121,13 @@ class TranslationApp {
     }
     
     private function processFile(string $locale, string $type, array $path): bool {
-        $outputFileName = $locale . '.com_sppagebuilder' . ($type === 'sys' ? '.sys' : '') . '.ini';
-        return $this->contentReplacer
-            ->setOutputFileName($outputFileName)
-            ->replaceContent(
-                $path['input'],
-                $locale,
-                $path['output'],
-                $type !== 'site'
-            );
+        $outputFileName = $locale . '.' . $this->componentName . ($type === 'sys' ? '.sys' : '') . '.ini';
+        return $this->contentReplacer->replaceContent(
+            $path['input'],
+            $locale,
+            $path['output'],
+            $type !== 'site',
+            $outputFileName
+        );
     }
 }

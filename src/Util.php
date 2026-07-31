@@ -12,60 +12,38 @@ use Monolog\Logger;
 class Util
 {
     /**
-     * Retrieves all folder names within a specified directory, excluding specific folders.
+     * Creates a Monolog Logger instance with a file handler.
      *
-     * This method scans the provided directory and returns an array of folder names, excluding
-     * any folders named 'overrides' and 'en-GB'.
-     *
-     * @param string $directory The path to the directory to scan for folders.
-     *
-     * @return array An array containing the names of folders found within the directory,
-     *               excluding 'overrides' and 'en-GB'.
+     * @param string $name The logger name
+     * @param string $logLevel The minimum log level (debug, info, notice, warning, error, critical, alert, emergency)
+     * @return Logger
      */
-    public static function getAllFolders(string $directory): array
-    {
-        if (!is_dir($directory)) {
-            return [];
-        }
-
-        $contents = scandir($directory);
-        $folders = [];
-
-        foreach ($contents as $item) {
-            if ($item === '.' || $item === '..') {
-                continue;
-            }
-
-            $fullPath = $directory . DIRECTORY_SEPARATOR . $item;
-            if (is_dir($fullPath) && $item !== 'overrides' && $item !== 'en-GB') {
-                $folders[] = $item;
-            }
-        }
-
-        return $folders;
-    }
-
-    public static function createLogger(string $name = 'ollama_api'): Logger
+    public static function createLogger(string $name = 'ollama_api', string $logLevel = 'info'): Logger
     {
         $logger = new Logger($name);
-        return $logger;
-    }
-
-    public static function writeLog() : void
-    {
-        $logger = self::createLogger();
 
         $logsPath = dirname(__DIR__) . '/logs';
-
         if (!file_exists($logsPath)) {
-            mkdir($logsPath, 0777, true);
+            mkdir($logsPath, 0755, true);
         }
 
         $logsFile = $logsPath . '/ollama_api.log';
-        $logger->pushHandler(new StreamHandler($logsFile, Level::Error));
+        $level = Level::from($logLevel);
+        $logger->pushHandler(new StreamHandler($logsFile, $level));
+
+        return $logger;
     }
 
-    public static function constructFilePath($basePath, $langCode, $componentName, $extension) {
+    /**
+     * Constructs a file path from base path, lang code, component name, and extension.
+     *
+     * @param string $basePath The base directory path
+     * @param string $langCode The language code
+     * @param string $componentName The component name
+     * @param string $extension The file extension
+     * @return string The constructed file path
+     */
+    public static function constructFilePath(string $basePath, string $langCode, string $componentName, string $extension): string {
         return implode(DIRECTORY_SEPARATOR, [$basePath, $langCode . '.' . $componentName . $extension]);
     }
 }

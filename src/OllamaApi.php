@@ -10,19 +10,32 @@ class OllamaApi
     private Ollama $client;
     private LoggerInterface $logger;
 
-    public function __construct(LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger, ?Ollama $client = null)
     {
-        $this->client = Ollama::client();
+        $this->client = $client ?? Ollama::client();
         $this->logger = $logger;
     }
 
+    /**
+     * Get a translation response from the Ollama API with retries and exponential backoff.
+     *
+     * @param string $text The text to translate
+     * @param string $locale The target locale
+     * @param string $model The model to use
+     * @param float $temperature The temperature for generation
+     * @param int $maxTokens Maximum tokens to generate
+     * @param int $timeout Timeout in seconds
+     * @param int $maxRetries Maximum number of retry attempts
+     * @param int $initialBackoff Initial backoff time in seconds
+     * @return string|null The translated text or null on failure
+     */
     public function getResponse(
         string $text,
         string $locale,
         string $model = "gemma3",
         float $temperature = 0.0,
         int $maxTokens = 300,
-        ?int $timeout = 20,
+        int $timeout = 20,
         int $maxRetries = 3,
         int $initialBackoff = 1
     ): ?string {
@@ -35,7 +48,7 @@ class OllamaApi
                     'prompt' => $prompt,
                     'temperature' => $temperature,
                     'max_tokens' => $maxTokens,
-                    'timeout' => $timeout ?? 20, // Ensure default if null
+                    'timeout' => $timeout,
                     'stream' => false,
                 ]);
 
@@ -45,7 +58,6 @@ class OllamaApi
                     return $translation;
                 }
                 
-                // Handle empty response case
                 $this->logger->warning("Empty translation response received", [
                     'text' => $text,
                     'locale' => $locale,
@@ -64,6 +76,13 @@ class OllamaApi
         return null;
     }
 
+    /**
+     * Build the translation prompt for the LLM.
+     *
+     * @param string $text The text to translate
+     * @param string $locale The target locale
+     * @return string The formatted prompt
+     */
     private function buildTranslationPrompt(string $text, string $locale): string
     {
         return <<<PROMPT
@@ -71,6 +90,14 @@ class OllamaApi
         PROMPT;
     }
 
+    /**
+     * Handle timeout exception with logging and backoff.
+     *
+     * @param TimeoutException $e The exception
+     * @param int $attempt Current attempt number
+     * @param int $maxRetries Maximum retries
+     * @param int $initialBackoff Initial backoff time
+     */
     private function handleTimeoutException(
         TimeoutException $e,
         int $attempt,
@@ -88,6 +115,14 @@ class OllamaApi
         }
     }
 
+    /**
+     * Handle generic exception with logging and backoff.
+     *
+     * @param \Exception $e The exception
+     * @param int $attempt Current attempt number
+     * @param int $maxRetries Maximum retries
+     * @param int $initialBackoff Initial backoff time
+     */
     private function handleGenericException(
         \Exception $e,
         int $attempt,
