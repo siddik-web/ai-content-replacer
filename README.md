@@ -1,30 +1,23 @@
-# EasyStore
+# Ollama API Translation Tool
 
-A Joomla e-commerce component project.
+## Overview
 
-## Requirements
+This tool provides an automated translation solution for Joomla language files using the Ollama API. It simplifies the process of translating language files for both site and administrator sections of a Joomla installation.
 
-- PHP 8.1+
-- Joomla 5.x
+## Prerequisites
 
-<<<<<<< Updated upstream
-## Setup
-=======
 - PHP 7.4 or higher
 - Composer
 - Node.js 18+ (for testing)
 - Ollama API running locally
 - Joomla installation
->>>>>>> Stashed changes
 
 1. Clone the repository
 2. Run `composer install`
 3. Configure your `.env` file based on `.env.example`
 
-<<<<<<< Updated upstream
-## License
+## Features
 
-=======
 - Automated translation of Joomla language files
 - Support for site and administrator language files
 - Configurable translation settings
@@ -396,5 +389,5 @@ npx playwright show-trace test-results/trace.zip
 
 ## License
 
->>>>>>> Stashed changes
 MIT
+
