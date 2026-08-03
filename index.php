@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Translate Language - SP Page Builder</title>
+    <title>Translate Language - JoomShaper Extensions</title>
     <style>
         /* General Styles */
         body {
@@ -111,12 +111,12 @@
     require_once 'vendor/autoload.php';
     $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
     $dotenv->safeLoad();
-    
-    $defaultProjectPath = $_ENV['PROJECT_PATH'] ?? '';
+
+    $defaultProjectPath   = $_ENV['PROJECT_PATH'] ?? '';
     $defaultComponentName = $_ENV['COMPONENT_NAME'] ?? '';
-    ?>
+?>
     <div class="container">
-        <h1>Translate Language - SP Page Builder</h1>
+        <h1>Translate Language - JoomShaper Extensions</h1>
         <form action="main.php" method="post" id="translationForm">
             <div>
                 <label for="projectPath">Project Path:</label>
@@ -132,19 +132,66 @@
                 <label for="code">Language Code:</label>
                 <select name="code" id="code">
                     <option value="">Please Select Language Code</option>
+                    <option value="af-ZA">Afrikaans (af-ZA)</option>
+                    <option value="sq-AL">Albanian (sq-AL)</option>
+                    <option value="ar-AA">Arabic (ar-AA)</option>
+                    <option value="hy-AM">Armenian (hy-AM)</option>
+                    <option value="az-AZ">Azerbaijani (az-AZ)</option>
+                    <option value="eu-ES">Basque (eu-ES)</option>
+                    <option value="be-BY">Belarusian (be-BY)</option>
+                    <option value="bn-BD">Bengali (bn-BD)</option>
+                    <option value="bs-BA">Bosnian (bs-BA)</option>
                     <option value="bg-BG">Bulgarian (bg-BG)</option>
+                    <option value="ca-ES">Catalan (ca-ES)</option>
+                    <option value="zh-CN">Chinese Simplified (zh-CN)</option>
+                    <option value="zh-TW">Chinese Traditional (zh-TW)</option>
+                    <option value="hr-HR">Croatian (hr-HR)</option>
                     <option value="cs-CZ">Czech (cs-CZ)</option>
-                    <option value="es-ES">Spanish (es-ES)</option>
+                    <option value="da-DK">Danish (da-DK)</option>
+                    <option value="nl-NL">Dutch (nl-NL)</option>
+                    <option value="en-GB">English UK (en-GB)</option>
+                    <option value="en-US">English US (en-US)</option>
+                    <option value="eo-XX">Esperanto (eo-XX)</option>
+                    <option value="et-EE">Estonian (et-EE)</option>
                     <option value="fi-FI">Finnish (fi-FI)</option>
                     <option value="fr-FR">French (fr-FR)</option>
+                    <option value="gl-ES">Galician (gl-ES)</option>
+                    <option value="ka-GE">Georgian (ka-GE)</option>
+                    <option value="de-DE">German (de-DE)</option>
+                    <option value="el-GR">Greek (el-GR)</option>
+                    <option value="he-IL">Hebrew (he-IL)</option>
+                    <option value="hi-IN">Hindi (hi-IN)</option>
+                    <option value="hu-HU">Hungarian (hu-HU)</option>
+                    <option value="is-IS">Icelandic (is-IS)</option>
+                    <option value="id-ID">Indonesian (id-ID)</option>
                     <option value="it-IT">Italian (it-IT)</option>
-                    <option value="nl-NL">Dutch (nl-NL)</option>
+                    <option value="ja-JP">Japanese (ja-JP)</option>
+                    <option value="km-KH">Khmer (km-KH)</option>
+                    <option value="ko-KR">Korean (ko-KR)</option>
+                    <option value="lv-LV">Latvian (lv-LV)</option>
+                    <option value="lt-LT">Lithuanian (lt-LT)</option>
+                    <option value="mk-MK">Macedonian (mk-MK)</option>
+                    <option value="ms-MY">Malay (ms-MY)</option>
+                    <option value="nb-NO">Norwegian Bokmål (nb-NO)</option>
+                    <option value="nn-NO">Norwegian Nynorsk (nn-NO)</option>
+                    <option value="fa-IR">Persian (fa-IR)</option>
+                    <option value="pl-PL">Polish (pl-PL)</option>
                     <option value="pt-BR">Portuguese Brazil (pt-BR)</option>
                     <option value="pt-PT">Portuguese (pt-PT)</option>
+                    <option value="ro-RO">Romanian (ro-RO)</option>
                     <option value="ru-RU">Russian (ru-RU)</option>
+                    <option value="sr-RS">Serbian Cyrillic (sr-RS)</option>
+                    <option value="sk-SK">Slovak (sk-SK)</option>
+                    <option value="sl-SI">Slovenian (sl-SI)</option>
+                    <option value="es-ES">Spanish (es-ES)</option>
+                    <option value="sv-SE">Swedish (sv-SE)</option>
+                    <option value="ta-IN">Tamil (ta-IN)</option>
                     <option value="th-TH">Thai (th-TH)</option>
+                    <option value="tr-TR">Turkish (tr-TR)</option>
                     <option value="uk-UA">Ukrainian (uk-UA)</option>
-                    <option value="de-DE">German (de-DE)</option>
+                    <option value="ur-PK">Urdu (ur-PK)</option>
+                    <option value="vi-VN">Vietnamese (vi-VN)</option>
+                    <option value="cy-GB">Welsh (cy-GB)</option>
                 </select>
                 <div id="code-error" class="error"></div>
             </div>
@@ -168,6 +215,101 @@
     </div>
 
     <script>
+        const SP_PAGEBUILDER_LANGS = [
+            'bg-BG', 'cs-CZ', 'de-DE', 'es-ES', 'fi-FI', 'fr-FR',
+            'it-IT', 'nl-NL', 'pt-BR', 'pt-PT', 'ru-RU', 'th-TH', 'uk-UA'
+        ];
+
+        const ALL_LANGUAGES = [
+            { value: 'af-ZA', label: 'Afrikaans (af-ZA)' },
+            { value: 'sq-AL', label: 'Albanian (sq-AL)' },
+            { value: 'ar-AA', label: 'Arabic (ar-AA)' },
+            { value: 'hy-AM', label: 'Armenian (hy-AM)' },
+            { value: 'az-AZ', label: 'Azerbaijani (az-AZ)' },
+            { value: 'eu-ES', label: 'Basque (eu-ES)' },
+            { value: 'be-BY', label: 'Belarusian (be-BY)' },
+            { value: 'bn-BD', label: 'Bengali (bn-BD)' },
+            { value: 'bs-BA', label: 'Bosnian (bs-BA)' },
+            { value: 'bg-BG', label: 'Bulgarian (bg-BG)' },
+            { value: 'ca-ES', label: 'Catalan (ca-ES)' },
+            { value: 'zh-CN', label: 'Chinese Simplified (zh-CN)' },
+            { value: 'zh-TW', label: 'Chinese Traditional (zh-TW)' },
+            { value: 'hr-HR', label: 'Croatian (hr-HR)' },
+            { value: 'cs-CZ', label: 'Czech (cs-CZ)' },
+            { value: 'da-DK', label: 'Danish (da-DK)' },
+            { value: 'nl-NL', label: 'Dutch (nl-NL)' },
+            { value: 'en-GB', label: 'English UK (en-GB)' },
+            { value: 'en-US', label: 'English US (en-US)' },
+            { value: 'eo-XX', label: 'Esperanto (eo-XX)' },
+            { value: 'et-EE', label: 'Estonian (et-EE)' },
+            { value: 'fi-FI', label: 'Finnish (fi-FI)' },
+            { value: 'fr-FR', label: 'French (fr-FR)' },
+            { value: 'gl-ES', label: 'Galician (gl-ES)' },
+            { value: 'ka-GE', label: 'Georgian (ka-GE)' },
+            { value: 'de-DE', label: 'German (de-DE)' },
+            { value: 'el-GR', label: 'Greek (el-GR)' },
+            { value: 'he-IL', label: 'Hebrew (he-IL)' },
+            { value: 'hi-IN', label: 'Hindi (hi-IN)' },
+            { value: 'hu-HU', label: 'Hungarian (hu-HU)' },
+            { value: 'is-IS', label: 'Icelandic (is-IS)' },
+            { value: 'id-ID', label: 'Indonesian (id-ID)' },
+            { value: 'it-IT', label: 'Italian (it-IT)' },
+            { value: 'ja-JP', label: 'Japanese (ja-JP)' },
+            { value: 'km-KH', label: 'Khmer (km-KH)' },
+            { value: 'ko-KR', label: 'Korean (ko-KR)' },
+            { value: 'lv-LV', label: 'Latvian (lv-LV)' },
+            { value: 'lt-LT', label: 'Lithuanian (lt-LT)' },
+            { value: 'mk-MK', label: 'Macedonian (mk-MK)' },
+            { value: 'ms-MY', label: 'Malay (ms-MY)' },
+            { value: 'nb-NO', label: 'Norwegian Bokmål (nb-NO)' },
+            { value: 'nn-NO', label: 'Norwegian Nynorsk (nn-NO)' },
+            { value: 'fa-IR', label: 'Persian (fa-IR)' },
+            { value: 'pl-PL', label: 'Polish (pl-PL)' },
+            { value: 'pt-BR', label: 'Portuguese Brazil (pt-BR)' },
+            { value: 'pt-PT', label: 'Portuguese (pt-PT)' },
+            { value: 'ro-RO', label: 'Romanian (ro-RO)' },
+            { value: 'ru-RU', label: 'Russian (ru-RU)' },
+            { value: 'sr-RS', label: 'Serbian Cyrillic (sr-RS)' },
+            { value: 'sk-SK', label: 'Slovak (sk-SK)' },
+            { value: 'sl-SI', label: 'Slovenian (sl-SI)' },
+            { value: 'es-ES', label: 'Spanish (es-ES)' },
+            { value: 'sv-SE', label: 'Swedish (sv-SE)' },
+            { value: 'ta-IN', label: 'Tamil (ta-IN)' },
+            { value: 'th-TH', label: 'Thai (th-TH)' },
+            { value: 'tr-TR', label: 'Turkish (tr-TR)' },
+            { value: 'uk-UA', label: 'Ukrainian (uk-UA)' },
+            { value: 'ur-PK', label: 'Urdu (ur-PK)' },
+            { value: 'vi-VN', label: 'Vietnamese (vi-VN)' },
+            { value: 'cy-GB', label: 'Welsh (cy-GB)' }
+        ];
+
+        function filterLanguagesByComponent() {
+            const componentNameInput = document.getElementById('componentName');
+            const codeSelect = document.getElementById('code');
+            const componentVal = componentNameInput.value.trim().toLowerCase();
+            const currentSelected = codeSelect.value;
+
+            const isSpPageBuilder = componentVal === 'com_sppagebuilder';
+
+            // Re-populate options
+            codeSelect.innerHTML = '<option value="">Please Select Language Code</option>';
+
+            ALL_LANGUAGES.forEach(lang => {
+                if (!isSpPageBuilder || SP_PAGEBUILDER_LANGS.includes(lang.value)) {
+                    const option = document.createElement('option');
+                    option.value = lang.value;
+                    option.textContent = lang.label;
+                    if (lang.value === currentSelected) {
+                        option.selected = true;
+                    }
+                    codeSelect.appendChild(option);
+                }
+            });
+        }
+
+        document.getElementById('componentName').addEventListener('input', filterLanguagesByComponent);
+        document.getElementById('componentName').addEventListener('change', filterLanguagesByComponent);
+
         document.getElementById('translationForm').addEventListener('submit', async function (event) {
             event.preventDefault();
 

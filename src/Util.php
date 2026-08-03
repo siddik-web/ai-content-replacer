@@ -28,7 +28,11 @@ class Util
         }
 
         $logsFile = $logsPath . '/ollama_api.log';
-        $level = Level::from($logLevel);
+        try {
+            $level = Level::fromName($logLevel);
+        } catch (\Throwable $e) {
+            $level = Level::Info;
+        }
         $logger->pushHandler(new StreamHandler($logsFile, $level));
 
         return $logger;

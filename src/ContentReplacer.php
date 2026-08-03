@@ -4,15 +4,17 @@ namespace App;
 use App\OllamaApi;
 use Psr\Log\LoggerInterface;
 
-class ContentReplacer {
+class ContentReplacer
+{
     private TranslationService $translationService;
     private OllamaApi $ollamaApi;
     private LoggerInterface $logger;
 
-    public function __construct(TranslationService $translationService, OllamaApi $ollamaApi, LoggerInterface $logger) {
+    public function __construct(TranslationService $translationService, OllamaApi $ollamaApi, LoggerInterface $logger)
+    {
         $this->translationService = $translationService;
-        $this->ollamaApi = $ollamaApi;
-        $this->logger = $logger;
+        $this->ollamaApi          = $ollamaApi;
+        $this->logger             = $logger;
     }
 
     /**
@@ -25,10 +27,11 @@ class ContentReplacer {
      * @param string $outputFileName The name of the output file
      * @return bool True if successful, false otherwise
      */
-    public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir, bool $isAdmin, string $outputFileName): bool {
+    public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir, bool $isAdmin, string $outputFileName): bool
+    {
         try {
             $localeOutputDir = $outputBaseDir . "/$locale";
-            if (!is_dir($localeOutputDir)) {
+            if (! is_dir($localeOutputDir)) {
                 mkdir($localeOutputDir, 0755, true);
                 $this->logger->info("Created directory: '$localeOutputDir'");
             }
@@ -37,7 +40,13 @@ class ContentReplacer {
 
             $isSystemFile = $isAdmin && strpos($inputFilePath, '.sys.ini') !== false;
 
-            $translations = $this->translationService->loadTranslations($locale, $isAdmin, $isSystemFile);
+            try {
+                $translations = $this->translationService->loadTranslations($locale, $isAdmin, $isSystemFile);
+            } catch (\RuntimeException $e) {
+                $this->logger->info("Target translation file not found for locale '$locale'. A new translation file will be created.");
+                $translations = [];
+            }
+
             $baseTranslations = $this->translationService->loadTranslations('en-GB', $isAdmin, $isSystemFile);
 
             $missingTranslations = array_diff_key($baseTranslations, $translations);
@@ -64,7 +73,7 @@ class ContentReplacer {
                 return false;
             }
 
-            if (!$this->appendToFile($translatedMissingKeys, $outputFilePath)) {
+            if (! $this->appendToFile($translatedMissingKeys, $outputFilePath)) {
                 $this->logger->error("Failed to append translations to file: '$outputFilePath'");
                 return false;
             }
@@ -84,18 +93,19 @@ class ContentReplacer {
      * @param string $filePath Path to the output file
      * @return bool True if successful, false otherwise
      */
-    private function appendToFile(array $content, string $filePath): bool {
+    private function appendToFile(array $content, string $filePath): bool
+    {
         try {
             $existingContent = [];
             if (file_exists($filePath)) {
                 $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
                 foreach ($lines as $line) {
-                    if (!empty($line)) {
+                    if (! empty($line)) {
                         $parts = explode('=', $line, 2);
                         if (count($parts) === 2) {
-                            $key = trim($parts[0]);
+                            $key   = trim($parts[0]);
                             $value = trim($parts[1]);
-                            if (!empty($key) && !empty($value)) {
+                            if (! empty($key) && ! empty($value)) {
                                 $existingContent[$key] = $value;
                             }
                         }
@@ -104,13 +114,13 @@ class ContentReplacer {
             }
 
             $file = fopen($filePath, 'a');
-            if (!$file) {
+            if (! $file) {
                 throw new \RuntimeException("Unable to open file for appending: '$filePath'");
             }
 
             $appendedCount = 0;
             foreach ($content as $key => $value) {
-                if (!isset($existingContent[$key])) {
+                if (! isset($existingContent[$key])) {
                     fwrite($file, "$key=\"$value\"" . PHP_EOL);
                     $appendedCount++;
                 }
