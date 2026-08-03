@@ -1,9 +1,9 @@
 <?php
 namespace App;
 
+use App\Exceptions\TimeoutException;
 use ArdaGnsrn\Ollama\Ollama;
 use Psr\Log\LoggerInterface;
-use App\Exceptions\TimeoutException;
 
 class OllamaApi
 {
@@ -32,7 +32,7 @@ class OllamaApi
     public function getResponse(
         string $text,
         string $locale,
-        string $model = "gemma3",
+        string $model = "gemma4",
         float $temperature = 0.0,
         int $maxTokens = 300,
         int $timeout = 20,
@@ -40,28 +40,28 @@ class OllamaApi
         int $initialBackoff = 1
     ): ?string {
         $prompt = $this->buildTranslationPrompt($text, $locale);
-        
+
         for ($attempt = 0; $attempt < $maxRetries; $attempt++) {
             try {
                 $response = $this->client->completions()->create([
-                    'model' => $model,
-                    'prompt' => $prompt,
+                    'model'       => $model,
+                    'prompt'      => $prompt,
                     'temperature' => $temperature,
-                    'max_tokens' => $maxTokens,
-                    'timeout' => $timeout,
-                    'stream' => false,
+                    'max_tokens'  => $maxTokens,
+                    'timeout'     => $timeout,
+                    'stream'      => false,
                 ]);
 
                 $translation = trim($response->response);
 
-                if (!empty($translation)) {
+                if (! empty($translation)) {
                     return $translation;
                 }
-                
+
                 $this->logger->warning("Empty translation response received", [
-                    'text' => $text,
+                    'text'   => $text,
                     'locale' => $locale,
-                    'model' => $model
+                    'model'  => $model,
                 ]);
 
                 return null;
@@ -106,7 +106,7 @@ class OllamaApi
     ): void {
         $this->logger->warning("API Timeout: Attempt {$attempt}/{$maxRetries}", [
             'message' => $e->getMessage(),
-            'timeout' => $e->getTimeout()
+            'timeout' => $e->getTimeout(),
         ]);
 
         if ($attempt < $maxRetries - 1) {
@@ -131,7 +131,7 @@ class OllamaApi
     ): void {
         $this->logger->error("API Error: Attempt {$attempt}/{$maxRetries}", [
             'message' => $e->getMessage(),
-            'code' => $e->getCode()
+            'code'    => $e->getCode(),
         ]);
 
         if ($attempt < $maxRetries - 1) {
