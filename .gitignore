@@ -1,30 +1,44 @@
 # Dependencies
-composer.lock
 vendor/
 node_modules/
-
-# IDE
-.vscode/
-
-# Logs
-logs/
-
-# OS
-.DS_Store
 
 # Environment
 .env
 .env.local
+.env.*.local
 
-# Playwright
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE & Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# Playwright & Testing
 test-results/
 playwright-report/
 blob-report/
 .playwright/
-
-# PHPUnit
 .phpunit.result.cache
+.cache/
 
 # Build
 dist/
 build/
+
