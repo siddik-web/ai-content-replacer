@@ -96,7 +96,14 @@ class TranslationService
             $fileExtension = $isSystemFile ? 'sys.ini' : 'ini';
         }
 
-        return "$basePath/$locale/{$locale}.{$this->getComponentName()}." . $fileExtension;
+        $prefixedPath = "$basePath/$locale/{$locale}.{$this->getComponentName()}." . $fileExtension;
+        $unprefixedPath = "$basePath/$locale/{$this->getComponentName()}." . $fileExtension;
+
+        if (file_exists($unprefixedPath)) {
+            return $unprefixedPath;
+        }
+
+        return $prefixedPath;
     }
 
     /**
