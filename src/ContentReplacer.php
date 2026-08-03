@@ -88,7 +88,7 @@ class ContentReplacer
                 $cached = $this->cache->get($value, $locale);
                 if ($cached !== null) {
                     $translatedMissingKeys[$key] = $cached;
-                    $this->logger->info("Cache hit for key '$key' ($locale): '$cached'");
+                    $this->logger->info("Translated key '$key' for locale '$locale': '$cached' (from cache)");
                 } else {
                     $uncachedKeys[$key] = $value;
                 }
@@ -168,8 +168,7 @@ class ContentReplacer
                         $parts = explode('=', $line, 2);
                         $key = trim($parts[0]);
                         if (array_key_exists($key, $content)) {
-                            $val = $content[$key];
-                            $valEscaped = str_replace('"', '\"', $val);
+                            $valEscaped = $this->cleanIniValue((string) $content[$key]);
                             $lines[] = "$key=\"$valEscaped\"";
                             $existingKeys[$key] = true;
                             continue;
@@ -181,7 +180,7 @@ class ContentReplacer
 
             foreach ($content as $key => $val) {
                 if (! isset($existingKeys[$key])) {
-                    $valEscaped = str_replace('"', '\"', $val);
+                    $valEscaped = $this->cleanIniValue((string) $val);
                     $lines[] = "$key=\"$valEscaped\"";
                 }
             }
@@ -198,5 +197,30 @@ class ContentReplacer
             $this->logger->error("Error writing/updating file '$filePath': " . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Clean and sanitize translation values for single-line INI syntax.
+     */
+    private function cleanIniValue(string $val): string
+    {
+        // Flatten multiline into single line
+        $val = str_replace(["\r\n", "\r", "\n"], ' ', $val);
+        $val = trim($val);
+
+        // Strip any pre-existing backslash-quote escaping so we can re-apply once cleanly
+        $val = str_replace('\"', '"', $val);
+
+        // Strip wrapping outer quotes (single or double) that LLMs sometimes add
+        while (
+            (str_starts_with($val, '"') && str_ends_with($val, '"')) ||
+            (str_starts_with($val, "'") && str_ends_with($val, "'"))
+        ) {
+            $val = substr($val, 1, -1);
+            $val = trim($val);
+        }
+
+        // Escape inner quotes once for valid Joomla .ini syntax: KEY="value with \"quotes\""
+        return str_replace('"', '\"', $val);
     }
 }

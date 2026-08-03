@@ -1275,11 +1275,11 @@
 
                         progressMessage.textContent = `${job.progress.message || 'Processing...'} (${remaining} strings remaining)`;
 
-                        // Live Realtime Parse of Translated Keys from Logs
+                        // Live Realtime Parse of Translated Keys from Logs (both LLM & Cached)
                         let keysChanged = false;
                         if (Array.isArray(job.logs)) {
                             job.logs.forEach(logLine => {
-                                const match = logLine.match(/Translated key '([^']+)' for locale '[^']+': '([^']*)'/);
+                                const match = logLine.match(/(?:Translated key|Cache hit for key) '([^']+)' (?:for locale '[^']+'|\([^)]+\)): '(.*?)'(?:\s*\(from cache\))?/);
                                 if (match) {
                                     const key = match[1];
                                     const transVal = match[2];
@@ -1335,7 +1335,7 @@
                 } catch (err) {
                     console.error('Polling error:', err);
                 }
-            }, 1000);
+            }, 300);
         }
 
         async function submitTranslationJob(selectedKeys = null) {

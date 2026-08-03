@@ -99,6 +99,10 @@ class TranslationService
         $prefixedPath = "$basePath/$locale/{$locale}.{$this->getComponentName()}." . $fileExtension;
         $unprefixedPath = "$basePath/$locale/{$this->getComponentName()}." . $fileExtension;
 
+        if (file_exists($prefixedPath)) {
+            return $prefixedPath;
+        }
+
         if (file_exists($unprefixedPath)) {
             return $unprefixedPath;
         }
@@ -161,13 +165,26 @@ class TranslationService
      */
     private function parseLine(string $line): ?array
     {
-        if (preg_match('/^([^=]+)=(["\'])(.*)\2$/', trim($line), $matches)) {
-            $key = trim($matches[1]);
-            $value = trim($matches[3]);
-            return [$key, $value];
+        $trimmed = trim($line);
+        if (empty($trimmed) || $trimmed[0] === ';') {
+            return null;
         }
-        
-        return null;
+
+        $pos = strpos($trimmed, '=');
+        if ($pos === false) {
+            return null;
+        }
+
+        $key = trim(substr($trimmed, 0, $pos));
+        $value = trim(substr($trimmed, $pos + 1));
+
+        if ((str_starts_with($value, '"') && str_ends_with($value, '"')) || (str_starts_with($value, "'") && str_ends_with($value, "'"))) {
+            $value = substr($value, 1, -1);
+        }
+
+        $value = str_replace('\"', '"', $value);
+
+        return [$key, $value];
     }
 
     /**
