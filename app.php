@@ -68,17 +68,17 @@ class TranslationApp {
         return implode(DIRECTORY_SEPARATOR, array_merge([$this->rootPath], $segments));
     }
     
-    public function processTranslation(string $locale, ?string $requestFileName = null): bool {
+    public function processTranslation(string $locale, ?string $requestFileName = null, ?callable $progressCallback = null, ?array $selectedKeys = null): bool {
         if (empty($locale)) {
             throw new InvalidArgumentException('Invalid request! code parameter missing');
         }
 
         $paths = $this->constructPaths();
-        
+
         if ($requestFileName === null) {
-            return $this->processAllFiles($locale, $paths);
+            return $this->processAllFiles($locale, $paths, $progressCallback, $selectedKeys);
         } else {
-            return $this->processSingleFile($locale, $requestFileName, $paths);
+            return $this->processSingleFile($locale, $requestFileName, $paths, $progressCallback, $selectedKeys);
         }
     }
     
@@ -102,32 +102,35 @@ class TranslationApp {
         ];
     }
     
-    private function processAllFiles(string $locale, array $paths): bool {
+    private function processAllFiles(string $locale, array $paths, ?callable $progressCallback = null, ?array $selectedKeys = null): bool {
         $allSuccess = true;
         foreach ($paths as $type => $path) {
-            if (!$this->processFile($locale, $type, $path)) {
+            if (!$this->processFile($locale, $type, $path, $progressCallback, $selectedKeys)) {
                 $allSuccess = false;
             }
         }
         return $allSuccess;
     }
     
-    private function processSingleFile(string $locale, string $requestFileName, array $paths): bool {
+    private function processSingleFile(string $locale, string $requestFileName, array $paths, ?callable $progressCallback = null, ?array $selectedKeys = null): bool {
         if (!isset($paths[$requestFileName])) {
             throw new InvalidArgumentException('Invalid file type specified');
         }
         
-        return $this->processFile($locale, $requestFileName, $paths[$requestFileName]);
+        return $this->processFile($locale, $requestFileName, $paths[$requestFileName], $progressCallback, $selectedKeys);
     }
     
-    private function processFile(string $locale, string $type, array $path): bool {
+    private function processFile(string $locale, string $type, array $path, ?callable $progressCallback = null, ?array $selectedKeys = null): bool {
         $outputFileName = $locale . '.' . $this->componentName . ($type === 'sys' ? '.sys' : '') . '.ini';
         return $this->contentReplacer->replaceContent(
             $path['input'],
             $locale,
             $path['output'],
             $type !== 'site',
-            $outputFileName
+            $outputFileName,
+            $progressCallback,
+            15,
+            $selectedKeys
         );
     }
 }

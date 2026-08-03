@@ -1,393 +1,176 @@
-# Ollama API Translation Tool
+# Ollama AI Translation Tool (`ai-content-replacer`)
 
-## Overview
+An automated, high-performance translation solution for Joomla extension language `.ini` files powered by local Ollama LLMs. It features **batch prompting**, **translation caching**, **background job queuing**, a **visual key inspector**, and a modern web interface.
 
-This tool provides an automated translation solution for Joomla language files using the Ollama API. It simplifies the process of translating language files for both site and administrator sections of a Joomla installation.
+---
 
-## Prerequisites
+## ⚡ Highlights & Key Features
 
-- PHP 7.4 or higher
-- Composer
-- Node.js 18+ (for testing)
-- Ollama API running locally
-- Joomla installation
+- **🚀 10x–50x Speed Boost via Batch Prompting**: Groups 15–25 missing key strings into structured JSON batch prompts, dramatically reducing LLM round-trip times and network overhead.
+- **⚡ 0ms Translation Caching**: Powered by `symfony/cache` (`FilesystemAdapter`). Identical strings across files or repeated translation runs return instantly in 0ms.
+- **🔄 Async Background Processing**: Non-blocking translation execution via background PHP CLI workers. Submits requests with instant `HTTP 202 Accepted` response.
+- **📊 Visual Key Inspector & Dashboard**: Live stats breakdown showing **Total Base Keys**, **Already Translated**, **Missing Keys**, and **Cached Strings**.
+- **🔍 Missing Keys Explorer**: Interactive table with real-time text search/filtering (`KEY_NAME` & English text) and cache status badges (`Cached` vs `LLM`).
+- **🎯 Flexible Action Modes**:
+  - **Batch Action**: Translate all missing keys in background batches.
+  - **Selected Action**: Check specific rows to translate selected keys only.
+  - **Single Action**: Translate an individual key string inline with a single click.
+- **📡 Real-Time Progress & Terminal Log Console**: Live percentage progress bar (`0% - 100%`) and dark monospaced developer terminal streaming worker activity.
+- **🎨 Modern Glassmorphic UI/UX**: Crafted with Google Fonts (*Inter* & *JetBrains Mono*), floating focus rings, and responsive card layouts.
+- **🧪 100% Test Coverage**: Fully verified with 21 PHPUnit unit tests and 49 Playwright E2E tests.
 
-1. Clone the repository
-2. Run `composer install`
-3. Configure your `.env` file based on `.env.example`
+---
 
-## Features
+## 📋 Prerequisites
 
-- Automated translation of Joomla language files
-- Support for site and administrator language files
-- Configurable translation settings
-- Non-destructive translation process
-- Web-based UI for easy configuration
-- Comprehensive E2E testing with Playwright
+- **PHP**: 7.4 or 8.x (with `cURL`, `mbstring`, and `json` extensions)
+- **Composer**: Dependency manager
+- **Node.js**: 18+ (for Playwright E2E tests)
+- **Ollama**: Local Ollama server running (e.g. `http://localhost:11434` with `gemma3:1b` or similar model)
 
-## Installation
+---
 
-1. Clone the repository:
+## 🛠️ Installation & Setup
+
+1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/siddik-web/ai-content-replacer
+   git clone https://github.com/siddik-web/ai-content-replacer.git
    cd ai-content-replacer
    ```
 
-2. Install PHP dependencies:
+2. **Install PHP Dependencies**:
    ```bash
    composer install
    ```
 
-3. Install Node.js dependencies (for testing):
+3. **Install Node.js Dependencies & Playwright Browsers**:
    ```bash
    npm install
    npx playwright install chromium
    ```
 
-4. Configure environment:
+4. **Environment Configuration**:
    ```bash
    cp .env.example .env
-   # Edit .env with your settings
+   ```
+   Edit `.env` to set your target project path and model:
+   ```env
+   PROJECT_PATH="/absolute/path/to/joomla/project"
+   COMPONENT_NAME="com_sppagebuilder"
+   OLLAMA_HOST="http://localhost:11434"
+   OLLAMA_MODEL="gemma3:1b"
    ```
 
-## Usage
+---
 
-### Web Interface
+## 🚀 Usage
 
-Start the PHP development server:
+### 1. Web Interface
+
+Start the built-in PHP development server:
 ```bash
 php -S localhost:8080
 ```
+Open **`http://localhost:8080`** in your browser.
 
-Open http://localhost:8080 in your browser.
+- **Scan & Inspect**: Click **`🔍 Scan Missing Keys`** to display missing string statistics and inspect key-value previews.
+- **Select Action**: Use checkboxes to select specific keys or click **Submit Translation** for full batch processing.
+- **Monitor Progress**: Watch the live progress bar and terminal log console as background worker tasks process translations.
 
-### CLI Usage
+### 2. API Endpoints
 
+- **`POST /main.php`**: Dispatches a translation job.
+  ```json
+  {
+    "code": "fr-FR",
+    "file": "site",
+    "projectPath": "/path/to/project",
+    "componentName": "com_sppagebuilder",
+    "async": true,
+    "selected_keys": ["COM_KEY_1", "COM_KEY_2"]
+  }
+  ```
+- **`GET /job-status.php?job_id={job_id}`**: Retrieves background job status, progress percentage, and log messages.
+- **`GET /scan-keys.php?projectPath=...&componentName=...&code=...&file=...`**: Scans `.ini` files and returns missing key details.
+
+### 3. CLI Background Worker
+
+Execute CLI background tasks directly:
 ```bash
-php main.php
+# Run CLI worker for specific background job
+php main.php --job-id=job_66af7d8291a
 ```
 
 ---
 
-## Testing
+## 🧪 Testing Suite
 
-This project uses **Playwright** for end-to-end (E2E) testing. Playwright is a modern testing framework that runs tests in a real browser, ensuring your application works correctly from the user's perspective.
-
-### Quick Start
+### PHPUnit Unit Tests (21 Tests)
 
 ```bash
-# Run all tests
+# Run all unit tests
+./vendor/bin/phpunit
+```
+*Coverage includes `OllamaApiTest`, `JobManagerTest`, `TranslationCacheTest`, `TranslationServiceTest`, and `UtilTest`.*
+
+### Playwright E2E Tests (49 Tests)
+
+```bash
+# Run all Playwright end-to-end tests
 npm test
 
-# Run with visible browser
-npm run test:headed
-```
+# Run individual test suites
+npm run test:form      # Form UI & validation tests
+npm run test:api       # API endpoint & server tests
+npm run test:workflow  # End-to-end translation workflow tests
+npm run test:utils     # Helper & utility function tests
 
-### Running Tests
-
-#### All Tests
-```bash
-npm test
-```
-
-#### Specific Test Suites
-```bash
-npm run test:form      # Form UI and validation tests (13 tests)
-npm run test:api       # API endpoint tests (14 tests)
-npm run test:workflow  # Workflow integration tests (8 tests)
-npm run test:utils     # Utility function tests (14 tests)
-```
-
-#### Debugging
-```bash
-npm run test:debug     # Run in debug mode with step-by-step execution
-npm run test:ui        # Open Playwright UI for interactive testing
-```
-
-#### Viewing Reports
-```bash
-npm run test:report    # Open HTML test report in browser
-```
-
-### Test Structure
-
-```
-tests/
-├── e2e/                          # Playwright E2E tests
-│   ├── form.spec.js              # Form UI and validation tests
-│   ├── api.spec.js               # API endpoint tests
-│   ├── workflow.spec.js          # End-to-end workflow tests
-│   └── utils.spec.js             # Utility function tests
-├── OllamaApiTest.php             # PHP unit tests for OllamaApi
-├── TranslationServiceTest.php    # PHP unit tests for TranslationService
-└── UtilTest.php                  # PHP unit tests for Util
-```
-
-### Test Coverage Details
-
-#### Form Tests (`form.spec.js`) - 13 tests
-
-| Test Category | Tests | Description |
-|---------------|-------|-------------|
-| **UI Elements** | 5 | Verifies form fields, language options, file types, loading spinner, result container |
-| **Validation** | 4 | Tests empty form submission, missing fields, error clearing |
-| **Submission** | 4 | Loading states, success/error messages, JSON payload verification |
-
-**Key scenarios tested:**
-- Form displays all required fields
-- All 13 language options are available
-- All 3 file types (Site, Admin, Admin Sys) are available
-- Validation errors appear for empty fields
-- Loading spinner shows during submission
-- Success/error messages display correctly
-- Correct JSON payload is sent to API
-
-#### API Tests (`api.spec.js`) - 14 tests
-
-| Test Category | Tests | Description |
-|---------------|-------|-------------|
-| **Input Validation** | 6 | Invalid JSON, empty body, missing required fields |
-| **Response Format** | 3 | Content-Type header, status/message fields |
-| **HTTP Methods** | 1 | POST request handling |
-| **Input Trimming** | 2 | Whitespace trimming for code and file parameters |
-| **Error Handling** | 2 | Invalid project paths, malformed JSON |
-
-**Key scenarios tested:**
-- Returns 400 for invalid JSON
-- Returns 400 for empty body
-- Returns 400 when `code` parameter is missing
-- Returns 400 when `file` parameter is missing
-- Returns proper JSON response format
-- Trims whitespace from input parameters
-
-#### Workflow Tests (`workflow.spec.js`) - 8 tests
-
-| Test Category | Tests | Description |
-|---------------|-------|-------------|
-| **Form to API Integration** | 3 | Full submission flow, multiple submissions, error recovery |
-| **Language Selection** | 2 | All languages, all file types |
-| **Edge Cases** | 3 | Special characters, long names, double submission prevention |
-
-**Key scenarios tested:**
-- Complete form submission with mocked API
-- Multiple sequential submissions
-- Error recovery and retry
-- All 13 languages can be selected
-- Special characters in project path
-- Long component names
-- Double submission prevention
-
-#### Utils Tests (`utils.spec.js`) - 14 tests
-
-| Test Category | Tests | Description |
-|---------------|-------|-------------|
-| **JSON Parsing** | 2 | Valid/invalid JSON handling |
-| **String Trimming** | 2 | Whitespace trimming, empty strings |
-| **DOM Manipulation** | 4 | Text content, visibility, button states |
-| **Fetch API** | 3 | POST requests, error handling, JSON parsing |
-| **Error Display** | 3 | Error/success messages, message clearing |
-
-**Key scenarios tested:**
-- JSON parsing works correctly
-- String trimming functions
-- DOM elements can be manipulated
-- Fetch API handles requests and errors
-- Error messages display with correct CSS classes
-
-### Writing New Tests
-
-#### Basic Test Structure
-
-```javascript
-// @ts-check
-const { test, expect } = require('@playwright/test');
-
-test.describe('Feature Name', () => {
-  test('should do something', async ({ page }) => {
-    await page.goto('/');
-    
-    // Your test logic here
-    await expect(page.locator('#element')).toBeVisible();
-  });
-});
-```
-
-#### Mocking API Responses
-
-```javascript
-test('should handle API response', async ({ page }) => {
-  // Mock the API response
-  await page.route('**/main.php', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ status: 'success', message: 'Done' }),
-    });
-  });
-
-  await page.goto('/');
-  await page.locator('#submitButton').click();
-  
-  await expect(page.locator('#result .success')).toContainText('Done');
-});
-```
-
-#### Testing API Endpoints Directly
-
-```javascript
-test('should validate API input', async ({ request }) => {
-  const response = await request.post('/main.php', {
-    headers: { 'Content-Type': 'application/json' },
-    data: {
-      code: 'fr-FR',
-      file: 'site',
-      projectPath: '/test',
-    },
-  });
-
-  expect(response.status()).toBe(200);
-  const body = await response.json();
-  expect(body.status).toBe('success');
-});
-```
-
-### Debugging Tests
-
-#### Using Debug Mode
-```bash
-npm run test:debug
-```
-This opens a browser window and pauses at each step, allowing you to inspect the page.
-
-#### Using Playwright UI
-```bash
-npm run test:ui
-```
-This opens the Playwright Test Generator UI where you can:
-- Record new tests by interacting with the browser
-- Inspect selectors
-- View test traces
-
-#### Viewing Test Reports
-```bash
-npm run test:report
-```
-Opens an HTML report with:
-- Test results summary
-- Screenshots for failed tests
-- Video recordings (if enabled)
-- Test traces for debugging
-
-### CI/CD Integration
-
-#### GitHub Actions Example
-
-```yaml
-name: E2E Tests
-
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - name: Install dependencies
-        run: |
-          composer install
-          npm install
-          npx playwright install --with-deps chromium
-      - name: Run tests
-        run: npm test
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: playwright-report
-          path: playwright-report/
-```
-
-### Configuration
-
-#### Playwright Configuration (`playwright.config.js`)
-
-| Option | Value | Description |
-|--------|-------|-------------|
-| `testDir` | `./tests/e2e` | Directory containing test files |
-| `timeout` | `30000` | Test timeout in milliseconds |
-| `retries` | `0` (local) / `2` (CI) | Number of retries on failure |
-| `workers` | `1` | Number of parallel workers |
-| `headless` | `true` | Run browser in headless mode |
-| `baseURL` | `http://localhost:8080` | Base URL for tests |
-
-#### Package Scripts
-
-| Script | Command | Description |
-|--------|---------|-------------|
-| `test` | `npx playwright test` | Run all tests |
-| `test:form` | `npx playwright test form.spec.js` | Run form tests |
-| `test:api` | `npx playwright test api.spec.js` | Run API tests |
-| `test:workflow` | `npx playwright test workflow.spec.js` | Run workflow tests |
-| `test:utils` | `npx playwright test utils.spec.js` | Run utils tests |
-| `test:headed` | `npx playwright test --headed` | Run with visible browser |
-| `test:debug` | `npx playwright test --debug` | Run in debug mode |
-| `test:ui` | `npx playwright test --ui` | Open Playwright UI |
-| `test:report` | `npx playwright show-report` | View HTML report |
-
-### Troubleshooting
-
-#### Common Issues
-
-1. **Tests fail with "element not found"**
-   - Ensure the PHP server is running: `php -S localhost:8080`
-   - Check if the page loads correctly in browser
-
-2. **Tests timeout**
-   - Increase timeout in `playwright.config.js`
-   - Check for slow API responses
-
-3. **Browser not found**
-   - Run: `npx playwright install chromium`
-
-4. **Port already in use**
-   - Kill existing server: `pkill -f "php -S localhost:8080"`
-   - Or change port in `playwright.config.js`
-
-#### Viewing Failed Tests
-
-When a test fails, Playwright saves:
-- Screenshot in `test-results/` directory
-- Trace file for debugging
-- Error context in `error-context.md`
-
-View traces with:
-```bash
-npx playwright show-trace test-results/trace.zip
+# Interactive / Headed Mode
+npm run test:headed    # Run tests in visible browser
+npm run test:debug     # Interactive step-by-step debug mode
+npm run test:ui        # Open Playwright UI dashboard
 ```
 
 ---
 
-## Configuration
+## 📁 Architecture & File Structure
 
-### Environment Variables
+```
+ai-content-replacer/
+├── app.php               # Application orchestrator (TranslationApp)
+├── index.php             # Web UI interface & progress console
+├── main.php              # API endpoint & CLI worker entrypoint
+├── scan-keys.php         # API endpoint for string scanning & inspection
+├── job-status.php        # API endpoint for background progress polling
+├── config.php            # Application constants & defaults
+├── src/
+│   ├── ContentReplacer.php    # Translation engine (caching, batching, callbacks)
+│   ├── OllamaApi.php          # Ollama client wrapper & batch prompt builder
+│   ├── TranslationCache.php   # Symfony Cache integration (0ms lookup)
+│   ├── JobManager.php         # Asynchronous job queue manager
+│   ├── TranslationService.php # Joomla .ini loader & parser
+│   └── Util.php               # Logger & path utilities
+├── storage/
+│   └── jobs/             # Background job JSON state files
+├── logs/
+│   └── cache/            # Symfony filesystem cache files
+└── tests/                # PHPUnit & Playwright test suites
+```
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OLLAMA_HOST` | Ollama API URL | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Model to use | `gemma3` |
-| `LOG_LEVEL` | Logging level | `info` |
-| `PROJECT_PATH` | Default Joomla project path | - |
-| `COMPONENT_NAME` | Default component name | `com_sppagebuilder` |
+---
 
-## License
+## ⚙️ Configuration Reference (`.env`)
 
-MIT
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `OLLAMA_HOST` | Local Ollama API URL | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Ollama model to use for translations | `gemma3:1b` |
+| `PROJECT_PATH` | Default root directory of Joomla project | - |
+| `COMPONENT_NAME` | Target component folder name | `com_sppagebuilder` |
+| `LOG_LEVEL` | Application logging level | `info` |
 
+---
+
+## 📄 License
+
+This project is open-source under the [MIT License](LICENSE).

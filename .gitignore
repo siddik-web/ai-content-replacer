@@ -30,15 +30,19 @@ yarn-error.log*
 Thumbs.db
 ehthumbs.db
 
+# Storage & Runtime Data
+storage/
+
 # Playwright & Testing
 test-results/
 playwright-report/
 blob-report/
 .playwright/
 .phpunit.result.cache
+.phpunit.cache/
 .cache/
+coverage/
 
 # Build
 dist/
 build/
-

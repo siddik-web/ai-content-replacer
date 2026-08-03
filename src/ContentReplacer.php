@@ -9,12 +9,18 @@ class ContentReplacer
     private TranslationService $translationService;
     private OllamaApi $ollamaApi;
     private LoggerInterface $logger;
+    private TranslationCache $cache;
 
-    public function __construct(TranslationService $translationService, OllamaApi $ollamaApi, LoggerInterface $logger)
-    {
+    public function __construct(
+        TranslationService $translationService,
+        OllamaApi $ollamaApi,
+        LoggerInterface $logger,
+        ?TranslationCache $cache = null
+    ) {
         $this->translationService = $translationService;
         $this->ollamaApi          = $ollamaApi;
         $this->logger             = $logger;
+        $this->cache              = $cache ?? new TranslationCache();
     }
 
     /**
@@ -25,10 +31,20 @@ class ContentReplacer
      * @param string $outputBaseDir Base directory for output files
      * @param bool $isAdmin Whether the file is for admin use
      * @param string $outputFileName The name of the output file
+     * @param callable|null $progressCallback Optional callback: fn(int $processed, int $total, string $message)
+     * @param int $batchSize Number of keys to translate per Ollama batch request
      * @return bool True if successful, false otherwise
      */
-    public function replaceContent(string $inputFilePath, string $locale, string $outputBaseDir, bool $isAdmin, string $outputFileName): bool
-    {
+    public function replaceContent(
+        string $inputFilePath,
+        string $locale,
+        string $outputBaseDir,
+        bool $isAdmin,
+        string $outputFileName,
+        ?callable $progressCallback = null,
+        int $batchSize = 15,
+        ?array $selectedKeys = null
+    ): bool {
         try {
             $localeOutputDir = $outputBaseDir . "/$locale";
             if (! is_dir($localeOutputDir)) {
@@ -51,20 +67,56 @@ class ContentReplacer
 
             $missingTranslations = array_diff_key($baseTranslations, $translations);
 
+            if ($selectedKeys !== null && ! empty($selectedKeys)) {
+                $missingTranslations = array_intersect_key($missingTranslations, array_flip($selectedKeys));
+            }
+            $totalKeys = count($missingTranslations);
+
             if (empty($missingTranslations)) {
                 $this->logger->info("No missing translations found for locale '$locale'. Skipping file update.");
+                if ($progressCallback) {
+                    $progressCallback(0, 0, "No missing translations found for locale '$locale'.");
+                }
                 return true;
             }
 
             $translatedMissingKeys = [];
+            $uncachedKeys = [];
 
+            // 1. First pass: check cache for each missing key
             foreach ($missingTranslations as $key => $value) {
-                $translatedValue = $this->ollamaApi->getResponse($value, $locale);
-                if ($translatedValue !== null) {
-                    $translatedMissingKeys[$key] = $translatedValue;
-                    $this->logger->info("Translated key '$key' for locale '$locale': '$translatedValue'");
+                $cached = $this->cache->get($value, $locale);
+                if ($cached !== null) {
+                    $translatedMissingKeys[$key] = $cached;
+                    $this->logger->info("Cache hit for key '$key' ($locale): '$cached'");
                 } else {
-                    $this->logger->warning("Failed to translate key '$key' for locale '$locale'");
+                    $uncachedKeys[$key] = $value;
+                }
+            }
+
+            $processedCount = count($translatedMissingKeys);
+            if ($progressCallback) {
+                $progressCallback($processedCount, $totalKeys, "Loaded $processedCount keys from cache.");
+            }
+
+            // 2. Second pass: Batch process uncached keys in chunks
+            if (! empty($uncachedKeys)) {
+                $chunks = array_chunk($uncachedKeys, $batchSize, true);
+
+                foreach ($chunks as $chunk) {
+                    $translatedChunk = $this->ollamaApi->getBatchResponse($chunk, $locale);
+
+                    foreach ($translatedChunk as $key => $translatedValue) {
+                        $translatedMissingKeys[$key] = $translatedValue;
+                        $originalValue = $chunk[$key] ?? $translatedValue;
+                        $this->cache->set($originalValue, $locale, $translatedValue);
+                        $this->logger->info("Translated key '$key' for locale '$locale': '$translatedValue'");
+                    }
+
+                    $processedCount += count($translatedChunk);
+                    if ($progressCallback) {
+                        $progressCallback($processedCount, $totalKeys, "Translated batch of " . count($translatedChunk) . " keys.");
+                    }
                 }
             }
 
@@ -73,12 +125,15 @@ class ContentReplacer
                 return false;
             }
 
-            if (! $this->appendToFile($translatedMissingKeys, $outputFilePath)) {
-                $this->logger->error("Failed to append translations to file: '$outputFilePath'");
+            if (! $this->writeOrUpdateFile($translatedMissingKeys, $outputFilePath)) {
+                $this->logger->error("Failed to write/update translations to file: '$outputFilePath'");
                 return false;
             }
 
-            $this->logger->info("Successfully appended " . count($translatedMissingKeys) . " translations to file: '$outputFilePath'");
+            $this->logger->info("Successfully updated " . count($translatedMissingKeys) . " translations in file: '$outputFilePath'");
+            if ($progressCallback) {
+                $progressCallback($totalKeys, $totalKeys, "Successfully completed translation.");
+            }
             return true;
         } catch (\Exception $e) {
             $this->logger->error("Error during translation process: " . $e->getMessage());
@@ -87,50 +142,60 @@ class ContentReplacer
     }
 
     /**
-     * Append content to a file, avoiding duplicate keys.
+     * Write or update content in a file, creating target directory/file if needed,
+     * appending missing keys, and updating existing key values.
      *
-     * @param array $content Array of key-value pairs to append
+     * @param array $content Array of key-value pairs to write/update
      * @param string $filePath Path to the output file
      * @return bool True if successful, false otherwise
      */
-    private function appendToFile(array $content, string $filePath): bool
+    private function writeOrUpdateFile(array $content, string $filePath): bool
     {
         try {
-            $existingContent = [];
+            $dir = dirname($filePath);
+            if (! is_dir($dir)) {
+                mkdir($dir, 0755, true);
+            }
+
+            $lines = [];
+            $existingKeys = [];
+
             if (file_exists($filePath)) {
-                $lines = file($filePath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                foreach ($lines as $line) {
-                    if (! empty($line)) {
+                $rawLines = file($filePath, FILE_IGNORE_NEW_LINES);
+                foreach ($rawLines as $line) {
+                    $trimmed = trim($line);
+                    if (! empty($trimmed) && strpos($trimmed, '=') !== false && $trimmed[0] !== ';') {
                         $parts = explode('=', $line, 2);
-                        if (count($parts) === 2) {
-                            $key   = trim($parts[0]);
-                            $value = trim($parts[1]);
-                            if (! empty($key) && ! empty($value)) {
-                                $existingContent[$key] = $value;
-                            }
+                        $key = trim($parts[0]);
+                        if (array_key_exists($key, $content)) {
+                            $val = $content[$key];
+                            $valEscaped = str_replace('"', '\"', $val);
+                            $lines[] = "$key=\"$valEscaped\"";
+                            $existingKeys[$key] = true;
+                            continue;
                         }
                     }
+                    $lines[] = $line;
                 }
             }
 
-            $file = fopen($filePath, 'a');
-            if (! $file) {
-                throw new \RuntimeException("Unable to open file for appending: '$filePath'");
-            }
-
-            $appendedCount = 0;
-            foreach ($content as $key => $value) {
-                if (! isset($existingContent[$key])) {
-                    fwrite($file, "$key=\"$value\"" . PHP_EOL);
-                    $appendedCount++;
+            foreach ($content as $key => $val) {
+                if (! isset($existingKeys[$key])) {
+                    $valEscaped = str_replace('"', '\"', $val);
+                    $lines[] = "$key=\"$valEscaped\"";
                 }
             }
 
-            fclose($file);
-            $this->logger->info("Appended $appendedCount new translations to file: '$filePath'");
+            $finalContent = implode(PHP_EOL, $lines);
+            if (! empty($lines)) {
+                $finalContent .= PHP_EOL;
+            }
+
+            file_put_contents($filePath, $finalContent);
+            $this->logger->info("Successfully wrote/updated " . count($content) . " keys in file: '$filePath'");
             return true;
         } catch (\Exception $e) {
-            $this->logger->error("Error appending to file '$filePath': " . $e->getMessage());
+            $this->logger->error("Error writing/updating file '$filePath': " . $e->getMessage());
             return false;
         }
     }
