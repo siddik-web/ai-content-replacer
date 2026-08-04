@@ -17,8 +17,16 @@ class JobManager
     /**
      * Create a new background translation job.
      */
-    public function createJob(string $locale, string $fileType, string $projectPath, string $componentName, ?array $selectedKeys = null): string
-    {
+    public function createJob(
+        string $locale, 
+        string $fileType, 
+        string $projectPath, 
+        string $componentName, 
+        ?array $selectedKeys = null,
+        ?string $provider = null,
+        ?string $apiKey = null,
+        ?string $model = null
+    ): string {
         $jobId = 'job_' . uniqid() . '_' . substr(md5(microtime()), 0, 6);
         $jobData = [
             'job_id'         => $jobId,
@@ -30,6 +38,9 @@ class JobManager
             'project_path'   => $projectPath,
             'component_name' => $componentName,
             'selected_keys'  => $selectedKeys,
+            'provider'       => $provider,
+            'api_key'        => $apiKey,
+            'model'          => $model,
             'progress'       => [
                 'processed'  => 0,
                 'total'      => 0,

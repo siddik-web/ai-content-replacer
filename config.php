@@ -15,3 +15,8 @@ define('LANG_FOLDER', 'language');
 define('ADMIN_FOLDER', 'administrator');
 define('INI_EXTENSION', '.ini');
 define('SYS_INI_EXTENSION', '.sys.ini');
+
+define('DEFAULT_LLM_PROVIDER', 'gemini');
+define('DEFAULT_GEMINI_MODEL', 'gemini-flash-lite-latest');
+define('DEFAULT_OLLAMA_MODEL', 'gemma3:1b');
+

@@ -24,15 +24,28 @@ class TranslationApp {
     private string $rootPath;
     private string $componentName;
     private string $langCode;
+    private ?string $provider;
+    private ?string $apiKey;
+    private ?string $model;
     private TranslationService $translationService;
     private ContentReplacer $contentReplacer;
     
-    public function __construct(string $rootPath, string $componentName = 'com_sppagebuilder', string $langCode = 'en-GB') {
+    public function __construct(
+        string $rootPath, 
+        string $componentName = 'com_sppagebuilder', 
+        string $langCode = 'en-GB',
+        ?string $provider = null,
+        ?string $apiKey = null,
+        ?string $model = null
+    ) {
         $this->validatePaths($rootPath);
         
         $this->rootPath = $rootPath;
         $this->componentName = $componentName;
         $this->langCode = $langCode;
+        $this->provider = $provider;
+        $this->apiKey = $apiKey;
+        $this->model = $model;
         
         $this->initializeServices();
     }
@@ -55,11 +68,11 @@ class TranslationApp {
             ->setSiteLanguagePath($siteLanguagePath)
             ->setAdminLanguagePath($adminLanguagePath);
             
-        $ollamaApi = new App\OllamaApi($logger);
+        $llmApi = App\LlmApiFactory::create($this->provider, $logger, $this->apiKey);
             
         $this->contentReplacer = new ContentReplacer(
             $this->translationService,
-            $ollamaApi,
+            $llmApi,
             $logger
         );
     }
@@ -130,7 +143,8 @@ class TranslationApp {
             $outputFileName,
             $progressCallback,
             15,
-            $selectedKeys
+            $selectedKeys,
+            $this->model
         );
     }
 }

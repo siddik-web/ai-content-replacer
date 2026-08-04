@@ -7,18 +7,18 @@ use Psr\Log\LoggerInterface;
 class ContentReplacer
 {
     private TranslationService $translationService;
-    private OllamaApi $ollamaApi;
+    private LlmApiInterface $llmApi;
     private LoggerInterface $logger;
     private TranslationCache $cache;
 
     public function __construct(
         TranslationService $translationService,
-        OllamaApi $ollamaApi,
+        LlmApiInterface $llmApi,
         LoggerInterface $logger,
         ?TranslationCache $cache = null
     ) {
         $this->translationService = $translationService;
-        $this->ollamaApi          = $ollamaApi;
+        $this->llmApi             = $llmApi;
         $this->logger             = $logger;
         $this->cache              = $cache ?? new TranslationCache();
     }
@@ -32,7 +32,9 @@ class ContentReplacer
      * @param bool $isAdmin Whether the file is for admin use
      * @param string $outputFileName The name of the output file
      * @param callable|null $progressCallback Optional callback: fn(int $processed, int $total, string $message)
-     * @param int $batchSize Number of keys to translate per Ollama batch request
+     * @param int $batchSize Number of keys to translate per LLM batch request
+     * @param array|null $selectedKeys Optional array of keys to translate
+     * @param string|null $model Optional model override
      * @return bool True if successful, false otherwise
      */
     public function replaceContent(
@@ -43,7 +45,8 @@ class ContentReplacer
         string $outputFileName,
         ?callable $progressCallback = null,
         int $batchSize = 15,
-        ?array $selectedKeys = null
+        ?array $selectedKeys = null,
+        ?string $model = null
     ): bool {
         try {
             $localeOutputDir = $outputBaseDir . "/$locale";
@@ -104,7 +107,9 @@ class ContentReplacer
                 $chunks = array_chunk($uncachedKeys, $batchSize, true);
 
                 foreach ($chunks as $chunk) {
-                    $translatedChunk = $this->ollamaApi->getBatchResponse($chunk, $locale);
+                    $translatedChunk = $model !== null
+                        ? $this->llmApi->getBatchResponse($chunk, $locale, $model)
+                        : $this->llmApi->getBatchResponse($chunk, $locale);
 
                     foreach ($translatedChunk as $key => $translatedValue) {
                         $translatedMissingKeys[$key] = $translatedValue;

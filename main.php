@@ -20,7 +20,11 @@ if (php_sapi_name() === 'cli') {
 
         try {
             $selectedKeys   = $jobData['selected_keys'] ?? null;
-            $translationApp = new TranslationApp($jobData['project_path'], $jobData['component_name']);
+            $provider       = $jobData['provider'] ?? null;
+            $apiKey         = $jobData['api_key'] ?? null;
+            $model          = $jobData['model'] ?? null;
+
+            $translationApp = new TranslationApp($jobData['project_path'], $jobData['component_name'], 'en-GB', $provider, $apiKey, $model);
             $success        = $translationApp->processTranslation(
                 $jobData['locale'],
                 $jobData['file_type'],
@@ -82,9 +86,13 @@ try {
     $selectedKeys = isset($input->selected_keys) && is_array($input->selected_keys) ? $input->selected_keys : null;
     $isAsync      = isset($input->async) ? (bool)$input->async : false;
 
+    $provider = isset($input->provider) ? trim($input->provider) : null;
+    $apiKey   = isset($input->apiKey) ? trim($input->apiKey) : (isset($input->api_key) ? trim($input->api_key) : null);
+    $model    = isset($input->model) ? trim($input->model) : null;
+
     if ($isAsync) {
         $jobManager = new JobManager();
-        $jobId      = $jobManager->createJob($requestCode, $requestFileName, $projectPath, $componentName, $selectedKeys);
+        $jobId      = $jobManager->createJob($requestCode, $requestFileName, $projectPath, $componentName, $selectedKeys, $provider, $apiKey, $model);
 
         // Spawn background CLI process
         $phpBin = PHP_BINARY ?: 'php';
@@ -101,7 +109,7 @@ try {
     }
 
     // Synchronous execution fallback
-    $translationApp = new TranslationApp($projectPath, $componentName);
+    $translationApp = new TranslationApp($projectPath, $componentName, 'en-GB', $provider, $apiKey, $model);
     $success        = $translationApp->processTranslation($requestCode, $requestFileName, null, $selectedKeys);
 
     if ($success) {

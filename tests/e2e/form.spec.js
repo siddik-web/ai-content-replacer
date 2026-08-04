@@ -253,11 +253,11 @@ test.describe('Translation Form - Submission', () => {
     await page.locator('#submitButton').click();
     await page.waitForResponse('**/main.php');
 
-    expect(requestBody).toEqual({
+    expect(requestBody).toEqual(expect.objectContaining({
       code: 'de-DE',
       file: 'admin',
       projectPath: '/test/project',
       componentName: 'com_test',
-    });
+    }));
   });
 });

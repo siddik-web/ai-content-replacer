@@ -5,7 +5,7 @@ use App\Exceptions\TimeoutException;
 use ArdaGnsrn\Ollama\Ollama;
 use Psr\Log\LoggerInterface;
 
-class OllamaApi
+class OllamaApi implements LlmApiInterface
 {
     private object $client;
     private LoggerInterface $logger;

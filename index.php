@@ -652,11 +652,14 @@
 
     $defaultProjectPath   = $_ENV['PROJECT_PATH'] ?? '';
     $defaultComponentName = $_ENV['COMPONENT_NAME'] ?? '';
+    $defaultProvider      = $_ENV['LLM_PROVIDER'] ?? 'gemini';
+    $defaultGeminiApiKey  = $_ENV['GEMINI_API_KEY'] ?? '';
+    $defaultGeminiModel   = $_ENV['GEMINI_MODEL'] ?? 'gemini-flash-lite-latest';
 ?>
     <div class="container">
         <div class="header-bar">
             <div>
-                <div class="brand-badge">⚡ Automated Ollama Translation</div>
+                <div class="brand-badge">⚡ Automated AI Translation</div>
                 <h1>Translate Language - SP Page Builder</h1>
                 <div class="subtitle">Fast, AI-powered automated translation suite for Joomla extension language `.ini` files.</div>
             </div>
@@ -670,6 +673,30 @@
         </div>
 
         <form action="main.php" method="post" id="translationForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="provider">LLM Provider</label>
+                    <select name="provider" id="provider" onchange="toggleProviderSettings()">
+                        <option value="gemini" <?php echo ($defaultProvider === 'gemini') ? 'selected' : ''; ?>>Google Gemini API (Free Key - Recommended)</option>
+                        <option value="ollama" <?php echo ($defaultProvider === 'ollama') ? 'selected' : ''; ?>>Ollama (Local LLM)</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="geminiApiKeyGroup">
+                    <label for="apiKey">Gemini API Key <small style="color: var(--text-muted); font-weight: normal;">(Free from AI Studio)</small></label>
+                    <input type="text" name="apiKey" id="apiKey" value="<?php echo htmlspecialchars($defaultGeminiApiKey); ?>" placeholder="AIzaSy...">
+                    <div id="apiKey-error" class="error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="model">LLM Model</label>
+                    <select name="model" id="model">
+                        <!-- Populated via JS toggleProviderSettings() -->
+                    </select>
+                    <div id="model-error" class="error"></div>
+                </div>
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label for="projectPath">Project Root Path</label>
@@ -947,6 +974,57 @@
             { value: 'vi-VN', label: 'Vietnamese (vi-VN)' },
             { value: 'cy-GB', label: 'Welsh (cy-GB)' }
         ];
+
+        const GEMINI_MODELS = [
+            { value: 'gemini-flash-lite-latest', label: 'Gemini 2.5 / Flash Lite (Recommended - Free Tier)', selected: true },
+            { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Free Tier)' },
+            { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
+            { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' }
+        ];
+
+        const OLLAMA_MODELS = [
+            { value: 'gemma3:1b', label: 'Gemma 3 (1B)', selected: true },
+            { value: 'gemma3', label: 'Gemma 3 (4B)' },
+            { value: 'llama3', label: 'Llama 3' },
+            { value: 'mistral', label: 'Mistral' }
+        ];
+
+        function toggleProviderSettings() {
+            const providerSelect = document.getElementById('provider');
+            const provider = providerSelect ? providerSelect.value : 'gemini';
+            const apiKeyGroup = document.getElementById('geminiApiKeyGroup');
+            const modelSelect = document.getElementById('model');
+
+            if (!modelSelect) return;
+
+            modelSelect.innerHTML = '';
+            const defaultModel = "<?php echo htmlspecialchars($defaultGeminiModel); ?>";
+
+            if (provider === 'gemini') {
+                if (apiKeyGroup) apiKeyGroup.style.display = 'flex';
+                GEMINI_MODELS.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.value;
+                    opt.textContent = m.label;
+                    if (m.value === defaultModel || (m.selected && !defaultModel)) opt.selected = true;
+                    modelSelect.appendChild(opt);
+                });
+            } else {
+                if (apiKeyGroup) apiKeyGroup.style.display = 'none';
+                OLLAMA_MODELS.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.value;
+                    opt.textContent = m.label;
+                    if (m.selected) opt.selected = true;
+                    modelSelect.appendChild(opt);
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleProviderSettings();
+            filterLanguagesByComponent();
+        });
 
         function applyPreset(compName) {
             document.getElementById('componentName').value = compName;
@@ -1348,6 +1426,10 @@
             const file = document.getElementById('file').value.trim();
             const projectPath = document.getElementById('projectPath').value.trim();
             const componentName = document.getElementById('componentName').value.trim();
+            const provider = document.getElementById('provider') ? document.getElementById('provider').value : 'gemini';
+            const apiKey = document.getElementById('apiKey') ? document.getElementById('apiKey').value.trim() : '';
+            const model = document.getElementById('model') ? document.getElementById('model').value : 'gemini-flash-lite-latest';
+
             let isValid = true;
 
             if (!code) {
@@ -1383,7 +1465,7 @@
             loadingText.style.display = 'block';
 
             try {
-                const formData = { code, file, projectPath, componentName };
+                const formData = { code, file, projectPath, componentName, provider, apiKey, model };
                 if (selectedKeys && selectedKeys.length > 0) {
                     formData.selected_keys = selectedKeys;
                 }
