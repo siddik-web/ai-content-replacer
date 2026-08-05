@@ -1849,10 +1849,11 @@
             loadingText.style.display = 'block';
 
             try {
-                const formData = { code, file, projectPath, componentName, provider, apiKey, model };
+                const formData = { code, file, projectPath, componentName, provider, apiKey, model, async: true };
                 if (selectedKeys && selectedKeys.length > 0) {
                     formData.selected_keys = selectedKeys;
                 }
+
 
                 const response = await fetch('main.php', {
                     method: 'POST',
