@@ -85,20 +85,25 @@ class ContentReplacer
 
             $translatedMissingKeys = [];
             $uncachedKeys = [];
+            $processedCount = 0;
 
             // 1. First pass: check cache for each missing key
             foreach ($missingTranslations as $key => $value) {
                 $cached = $this->cache->get($value, $locale);
                 if ($cached !== null) {
                     $translatedMissingKeys[$key] = $cached;
-                    $this->logger->info("Translated key '$key' for locale '$locale': '$cached' (from cache)");
+                    $logMsg = "Translated key '$key' for locale '$locale': '$cached' (from cache)";
+                    $this->logger->info($logMsg);
+                    $processedCount++;
+                    if ($progressCallback) {
+                        $progressCallback($processedCount, $totalKeys, $logMsg);
+                    }
                 } else {
                     $uncachedKeys[$key] = $value;
                 }
             }
 
-            $processedCount = count($translatedMissingKeys);
-            if ($progressCallback) {
+            if ($processedCount > 0 && $progressCallback) {
                 $progressCallback($processedCount, $totalKeys, "Loaded $processedCount keys from cache.");
             }
 
@@ -115,12 +120,13 @@ class ContentReplacer
                         $translatedMissingKeys[$key] = $translatedValue;
                         $originalValue = $chunk[$key] ?? $translatedValue;
                         $this->cache->set($originalValue, $locale, $translatedValue);
-                        $this->logger->info("Translated key '$key' for locale '$locale': '$translatedValue'");
-                    }
+                        $logMsg = "Translated key '$key' for locale '$locale': '$translatedValue'";
+                        $this->logger->info($logMsg);
 
-                    $processedCount += count($translatedChunk);
-                    if ($progressCallback) {
-                        $progressCallback($processedCount, $totalKeys, "Translated batch of " . count($translatedChunk) . " keys.");
+                        $processedCount++;
+                        if ($progressCallback) {
+                            $progressCallback($processedCount, $totalKeys, $logMsg);
+                        }
                     }
                 }
             }

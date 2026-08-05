@@ -1455,6 +1455,8 @@
             fetchJobsList();
         };
 
+        let activePollingJobId = null;
+
         async function fetchJobsList() {
             try {
                 const res = await fetch('job-status.php?action=list');
@@ -1462,6 +1464,11 @@
                 if (data.status === 'success' && Array.isArray(data.jobs)) {
                     renderJobsTable(data.jobs);
                     document.getElementById('countTabJobs').textContent = data.jobs.length;
+
+                    const processingJob = data.jobs.find(j => j.status === 'processing');
+                    if (processingJob && !activePollingJobId) {
+                        startJobPolling(processingJob.job_id);
+                    }
                 }
             } catch (err) {
                 console.error('Error fetching jobs:', err);
@@ -1479,6 +1486,9 @@
 
             jobs.forEach(job => {
                 const tr = document.createElement('tr');
+                if (job.job_id) {
+                    tr.setAttribute('data-job-id', job.job_id);
+                }
 
                 // Job ID
                 const tdId = document.createElement('td');
@@ -1707,6 +1717,7 @@
         let pollInterval = null;
 
         function startJobPolling(jobId) {
+            activePollingJobId = jobId;
             const progressBox = document.getElementById('progressBox');
             const progressBarFill = document.getElementById('progressBarFill');
             const progressMessage = document.getElementById('progressMessage');
@@ -1736,6 +1747,49 @@
                         liveRemainingText.textContent = `${remaining} left`;
 
                         progressMessage.textContent = `${job.progress.message || 'Processing...'} (${remaining} strings remaining)`;
+
+                        // Live update for table row in Jobs tab
+                        const jobRow = document.querySelector(`#jobsTableBody tr[data-job-id="${job.job_id}"]`);
+                        if (jobRow) {
+                            const badge = jobRow.children[1]?.querySelector('.badge');
+                            if (badge) {
+                                badge.className = `badge badge-${job.status}`;
+                                badge.textContent = (job.status || '').toUpperCase();
+                            }
+                            const tdProg = jobRow.children[3];
+                            if (tdProg) {
+                                tdProg.innerHTML = `
+                                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
+                                        <span>${processed}/${total}</span>
+                                        <span><strong>${pct}%</strong></span>
+                                    </div>
+                                    <div class="mini-progress-bar">
+                                        <div class="mini-progress-fill" style="width: ${pct}%;"></div>
+                                    </div>
+                                `;
+                            }
+                        }
+
+                        // Live update for open job modal
+                        const modal = document.getElementById('jobModal');
+                        const modalTitle = document.getElementById('modalJobTitle');
+                        if (modal && modal.style.display === 'flex' && modalTitle && modalTitle.textContent.includes(job.job_id)) {
+                            const details = document.getElementById('modalJobDetails');
+                            const logsBox = document.getElementById('modalJobLogs');
+                            if (details) {
+                                details.innerHTML = `
+                                    <div><strong>Status:</strong> <span class="badge badge-${job.status}">${(job.status || '').toUpperCase()}</span></div>
+                                    <div><strong>Locale:</strong> ${job.locale || 'N/A'} | <strong>Component:</strong> ${job.component_name || 'N/A'}</div>
+                                    <div><strong>Progress:</strong> ${processed} / ${total} (${pct}%)</div>
+                                    <div><strong>Created At:</strong> ${job.created_at ? new Date(job.created_at * 1000).toLocaleString() : 'N/A'}</div>
+                                    ${job.error ? `<div style="color: #b91c1c; font-weight: 600; margin-top: 4px;">Error: ${job.error}</div>` : ''}
+                                `;
+                            }
+                            if (logsBox && Array.isArray(job.logs)) {
+                                logsBox.textContent = job.logs.join('\n');
+                                logsBox.scrollTop = logsBox.scrollHeight;
+                            }
+                        }
 
                         // Live Realtime Parse of Translated Keys from Logs (both LLM & Cached)
                         let keysChanged = false;
@@ -1779,19 +1833,23 @@
 
                         if (job.status === 'completed') {
                             clearInterval(pollInterval);
+                            activePollingJobId = null;
                             resultDiv.innerHTML = `<p class="success">✓ ${job.progress.message || 'Translation job completed successfully!'}</p>`;
                             document.getElementById('submitButton').disabled = false;
                             updateSelectionState();
                             loadingSpinner.style.display = 'none';
                             loadingText.style.display = 'none';
                             scanMissingKeys();
+                            fetchJobsList();
                         } else if (job.status === 'failed') {
                             clearInterval(pollInterval);
+                            activePollingJobId = null;
                             resultDiv.innerHTML = `<p class="error-message">✕ ${job.error || 'Translation job failed.'}</p>`;
                             document.getElementById('submitButton').disabled = false;
                             updateSelectionState();
                             loadingSpinner.style.display = 'none';
                             loadingText.style.display = 'none';
+                            fetchJobsList();
                         }
                     }
                 } catch (err) {
