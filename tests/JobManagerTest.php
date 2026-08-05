@@ -56,4 +56,18 @@ class JobManagerTest extends TestCase
         $this->assertEquals('completed', $completedData['status']);
         $this->assertEquals(100, $completedData['progress']['percentage']);
     }
+
+    public function testGetAllJobs(): void
+    {
+        $jobManager = new JobManager($this->tempJobsDir);
+        $jobId1 = $jobManager->createJob('fr-FR', 'site', '/tmp/project', 'com_test1');
+        sleep(1);
+        $jobId2 = $jobManager->createJob('es-ES', 'admin', '/tmp/project', 'com_test2');
+
+        $allJobs = $jobManager->getAllJobs();
+        $this->assertCount(2, $allJobs);
+        $this->assertEquals($jobId2, $allJobs[0]['job_id']);
+        $this->assertEquals($jobId1, $allJobs[1]['job_id']);
+    }
 }
+

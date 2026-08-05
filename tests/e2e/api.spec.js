@@ -198,4 +198,15 @@ test.describe('API Endpoint - /main.php', () => {
       expect(body.status).toBe('error');
     });
   });
+
+  test.describe('Job Status API - /job-status.php', () => {
+    test('should return all jobs when action=list', async ({ request }) => {
+      const response = await request.get('/job-status.php?action=list');
+      expect(response.status()).toBe(200);
+      const body = await response.json();
+      expect(body.status).toBe('success');
+      expect(Array.isArray(body.jobs)).toBe(true);
+    });
+  });
 });
+

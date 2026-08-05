@@ -132,6 +132,56 @@ class JobManager
         return json_decode($content, true) ?: null;
     }
 
+    /**
+     * Get all background jobs sorted by creation timestamp descending.
+     *
+     * @return array<int, array>
+     */
+    public function getAllJobs(): array
+    {
+        if (! is_dir($this->jobsDir)) {
+            return [];
+        }
+
+        $files = glob($this->jobsDir . '/*.json') ?: [];
+        $jobs = [];
+
+        foreach ($files as $file) {
+            $content = file_get_contents($file);
+            $data = json_decode($content, true);
+            if (is_array($data)) {
+                $jobs[] = $data;
+            }
+        }
+
+        usort($jobs, function ($a, $b) {
+            $timeA = $a['created_at'] ?? 0;
+            $timeB = $b['created_at'] ?? 0;
+            return $timeB <=> $timeA;
+        });
+
+        return $jobs;
+    }
+
+    /**
+     * Delete all job history JSON files.
+     */
+    public function clearAllJobs(): void
+    {
+        if (! is_dir($this->jobsDir)) {
+            return;
+        }
+
+        $files = glob($this->jobsDir . '/*.json') ?: [];
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+
+
     private function saveJob(string $jobId, array $jobData): void
     {
         $filePath = $this->getJobFilePath($jobId);

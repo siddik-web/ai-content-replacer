@@ -526,6 +526,91 @@
             padding: 5px 12px;
         }
 
+        /* Job Status Badges */
+        .badge-pending {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .badge-processing {
+            background: #dbeafe;
+            color: #1d4ed8;
+            animation: pulseBg 1.5s infinite;
+        }
+
+        .badge-completed {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-failed {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        @keyframes pulseBg {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 680px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            padding: 24px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 22px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #94a3b8;
+            line-height: 1;
+        }
+
+        .modal-close:hover { color: #0f172a; }
+
+        .mini-progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .mini-progress-fill {
+            height: 100%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+        }
+
+
         /* Copy Key Button */
         .btn-copy {
             background: none;
@@ -826,6 +911,7 @@
             <div class="tab-nav">
                 <button type="button" class="tab-btn active" id="tabMissingBtn">⚠️ Missing Keys (<span id="countTabMissing">0</span>)</button>
                 <button type="button" class="tab-btn" id="tabTranslatedBtn">✅ Already Translated (<span id="countTabTranslated">0</span>)</button>
+                <button type="button" class="tab-btn" id="tabJobsBtn">📋 Background Jobs (<span id="countTabJobs">0</span>)</button>
             </div>
 
             <div class="explorer-header">
@@ -884,6 +970,34 @@
                     </table>
                 </div>
             </div>
+
+            <!-- View 3: Background Jobs Explorer -->
+            <div id="viewJobs" style="display: none;">
+                <div class="action-toolbar">
+                    <span style="font-size: 13px; font-weight: 600; color: #475569;">📊 Job History & Status Monitor</span>
+                    <div style="flex: 1;"></div>
+                    <button type="button" id="btnRefreshJobs" class="btn btn-sm" style="background: #e2e8f0; color: #334155; border: none; cursor: pointer; margin-right: 6px;">🔄 Refresh Jobs</button>
+                    <button type="button" id="btnClearJobs" class="btn btn-sm" style="background: #fee2e2; color: #b91c1c; border: none; cursor: pointer;">🗑️ Clear History</button>
+                </div>
+
+                <div class="keys-table-container">
+                    <table class="keys-table">
+                        <thead>
+                            <tr>
+                                <th>Job ID</th>
+                                <th>Status</th>
+                                <th>Target Locale / Component</th>
+                                <th>Progress</th>
+                                <th>Created</th>
+                                <th style="width: 100px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobsTableBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <div class="progress-box" id="progressBox">
@@ -903,11 +1017,35 @@
         <div class="result-container" id="result"></div>
     </div>
 
+    <!-- Job Log Modal -->
+    <div id="jobModal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modalJobTitle" style="margin: 0; font-size: 16px; color: var(--text-main);">Job Details</h3>
+                <button type="button" class="modal-close" id="modalCloseBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalJobDetails" style="font-size: 13px; color: #475569; margin-bottom: 12px; line-height: 1.6;"></div>
+                <div style="font-weight: 600; margin-top: 12px; margin-bottom: 6px; font-size: 13px;">Execution Logs:</div>
+                <div class="job-log-box" id="modalJobLogs" style="height: 220px;"></div>
+                <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+                    <button type="button" id="modalRerunBtn" class="btn btn-sm btn-primary-sm">🔄 Re-run Job</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Floating Toast Notification -->
     <div class="toast-notification" id="toastNotification">Notification text</div>
 
+
     <script>
+        const DEFAULT_PROJECT_PATH = <?php echo json_encode($defaultProjectPath); ?>;
+        const DEFAULT_COMPONENT_NAME = <?php echo json_encode($defaultComponentName); ?>;
+
         const SP_PAGEBUILDER_LANGS = [
+
             'bg-BG', 'cs-CZ', 'de-DE', 'es-ES', 'fi-FI', 'fr-FR',
             'it-IT', 'nl-NL', 'pt-BR', 'pt-PT', 'ru-RU', 'th-TH', 'uk-UA'
         ];
@@ -1281,27 +1419,273 @@
         // Tab Switching
         const tabMissingBtn = document.getElementById('tabMissingBtn');
         const tabTranslatedBtn = document.getElementById('tabTranslatedBtn');
+        const tabJobsBtn = document.getElementById('tabJobsBtn');
         const viewMissing = document.getElementById('viewMissing');
         const viewTranslated = document.getElementById('viewTranslated');
+        const viewJobs = document.getElementById('viewJobs');
 
         tabMissingBtn.onclick = () => {
             activeTab = 'missing';
             tabMissingBtn.classList.add('active');
             tabTranslatedBtn.classList.remove('active');
+            tabJobsBtn.classList.remove('active');
             viewMissing.style.display = 'block';
             viewTranslated.style.display = 'none';
+            viewJobs.style.display = 'none';
         };
 
         tabTranslatedBtn.onclick = () => {
             activeTab = 'translated';
             tabTranslatedBtn.classList.add('active');
             tabMissingBtn.classList.remove('active');
+            tabJobsBtn.classList.remove('active');
             viewTranslated.style.display = 'block';
             viewMissing.style.display = 'none';
+            viewJobs.style.display = 'none';
         };
+
+        tabJobsBtn.onclick = () => {
+            activeTab = 'jobs';
+            tabJobsBtn.classList.add('active');
+            tabMissingBtn.classList.remove('active');
+            tabTranslatedBtn.classList.remove('active');
+            viewJobs.style.display = 'block';
+            viewMissing.style.display = 'none';
+            viewTranslated.style.display = 'none';
+            fetchJobsList();
+        };
+
+        async function fetchJobsList() {
+            try {
+                const res = await fetch('job-status.php?action=list');
+                const data = await res.json();
+                if (data.status === 'success' && Array.isArray(data.jobs)) {
+                    renderJobsTable(data.jobs);
+                    document.getElementById('countTabJobs').textContent = data.jobs.length;
+                }
+            } catch (err) {
+                console.error('Error fetching jobs:', err);
+            }
+        }
+
+        function renderJobsTable(jobs) {
+            const tbody = document.getElementById('jobsTableBody');
+            tbody.innerHTML = '';
+
+            if (jobs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 24px;">No background jobs found.</td></tr>';
+                return;
+            }
+
+            jobs.forEach(job => {
+                const tr = document.createElement('tr');
+
+                // Job ID
+                const tdId = document.createElement('td');
+                tdId.style.fontFamily = 'monospace';
+                tdId.style.fontSize = '12px';
+                tdId.style.fontWeight = '600';
+                tdId.textContent = job.job_id || 'N/A';
+
+                // Status Badge
+                const tdStatus = document.createElement('td');
+                const badge = document.createElement('span');
+                const status = job.status || 'pending';
+                badge.className = `badge badge-${status}`;
+                badge.textContent = status.toUpperCase();
+                tdStatus.appendChild(badge);
+
+                // Locale / Component
+                const tdMeta = document.createElement('td');
+                const locale = job.locale || 'N/A';
+                const fileType = job.file_type || '';
+                const comp = job.component_name || '';
+                tdMeta.innerHTML = `<strong>${locale}</strong> <span style="color: #64748b; font-size: 12px;">(${fileType} - ${comp})</span>`;
+
+                // Progress
+                const tdProg = document.createElement('td');
+                const pct = job.progress?.percentage || 0;
+                const processed = job.progress?.processed || 0;
+                const total = job.progress?.total || 0;
+                tdProg.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 2px;">
+                        <span>${processed}/${total}</span>
+                        <span><strong>${pct}%</strong></span>
+                    </div>
+                    <div class="mini-progress-bar">
+                        <div class="mini-progress-fill" style="width: ${pct}%;"></div>
+                    </div>
+                `;
+
+                // Created
+                const tdTime = document.createElement('td');
+                tdTime.style.fontSize = '12px';
+                tdTime.style.color = '#64748b';
+                if (job.created_at) {
+                    const date = new Date(job.created_at * 1000);
+                    tdTime.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                } else {
+                    tdTime.textContent = 'N/A';
+                }
+
+                // Action
+                const tdAction = document.createElement('td');
+                tdAction.style.whiteSpace = 'nowrap';
+
+                const btnRerun = document.createElement('button');
+                btnRerun.type = 'button';
+                btnRerun.className = 'btn btn-sm btn-primary-sm';
+                btnRerun.style.marginRight = '6px';
+                btnRerun.textContent = '🔄 Re-run';
+                btnRerun.onclick = () => rerunJob(job);
+
+                const btnView = document.createElement('button');
+                btnView.type = 'button';
+                btnView.className = 'btn btn-sm scan-btn';
+                btnView.textContent = 'View Log';
+                btnView.onclick = () => openJobModal(job);
+
+                tdAction.appendChild(btnRerun);
+                tdAction.appendChild(btnView);
+
+                tr.appendChild(tdId);
+                tr.appendChild(tdStatus);
+                tr.appendChild(tdMeta);
+                tr.appendChild(tdProg);
+                tr.appendChild(tdTime);
+                tr.appendChild(tdAction);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openJobModal(job) {
+            const modal = document.getElementById('jobModal');
+            const title = document.getElementById('modalJobTitle');
+            const details = document.getElementById('modalJobDetails');
+            const logsBox = document.getElementById('modalJobLogs');
+            const modalRerunBtn = document.getElementById('modalRerunBtn');
+
+            title.textContent = `Job Details: ${job.job_id}`;
+            details.innerHTML = `
+                <div><strong>Status:</strong> <span class="badge badge-${job.status}">${(job.status || '').toUpperCase()}</span></div>
+                <div><strong>Locale:</strong> ${job.locale || 'N/A'} | <strong>Component:</strong> ${job.component_name || 'N/A'}</div>
+                <div><strong>Progress:</strong> ${job.progress?.processed || 0} / ${job.progress?.total || 0} (${job.progress?.percentage || 0}%)</div>
+                <div><strong>Created At:</strong> ${job.created_at ? new Date(job.created_at * 1000).toLocaleString() : 'N/A'}</div>
+                ${job.error ? `<div style="color: #b91c1c; font-weight: 600; margin-top: 4px;">Error: ${job.error}</div>` : ''}
+            `;
+
+            logsBox.textContent = Array.isArray(job.logs) ? job.logs.join('\n') : 'No logs available.';
+            logsBox.scrollTop = logsBox.scrollHeight;
+            modalRerunBtn.onclick = () => rerunJob(job);
+            modal.style.display = 'flex';
+        }
+
+        async function rerunJob(job) {
+            let path = job.project_path;
+            if (!path || path.includes('nonexistent')) {
+                path = document.getElementById('projectPath').value.trim() || DEFAULT_PROJECT_PATH;
+            }
+
+            let comp = job.component_name;
+            if (!comp || comp === 'com_test') {
+                comp = document.getElementById('componentName').value.trim() || DEFAULT_COMPONENT_NAME;
+            }
+
+            showToast(`Re-running job for ${job.locale || ''}...`);
+
+            // Populate form fields so user can inspect or adjust inputs
+            if (job.locale) document.getElementById('code').value = job.locale;
+            if (job.file_type) document.getElementById('file').value = job.file_type;
+            document.getElementById('projectPath').value = path;
+            document.getElementById('componentName').value = comp;
+            if (job.provider && document.getElementById('provider')) document.getElementById('provider').value = job.provider;
+            if (job.apiKey && document.getElementById('apiKey')) document.getElementById('apiKey').value = job.apiKey;
+            if (job.model && document.getElementById('model')) document.getElementById('model').value = job.model;
+
+            const code = job.locale || document.getElementById('code').value.trim();
+            const file = job.file_type || document.getElementById('file').value.trim();
+            const projectPath = path;
+            const componentName = comp;
+            const provider = job.provider || (document.getElementById('provider') ? document.getElementById('provider').value : 'gemini');
+            const apiKey = job.apiKey || (document.getElementById('apiKey') ? document.getElementById('apiKey').value.trim() : '');
+            const model = job.model || (document.getElementById('model') ? document.getElementById('model').value : 'gemini-flash-lite-latest');
+
+            const formData = { code, file, projectPath, componentName, provider, apiKey, model };
+            if (job.selected_keys && job.selected_keys.length > 0) {
+                formData.selected_keys = job.selected_keys;
+            }
+
+            try {
+                const response = await fetch('main.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'processing' && result.job_id) {
+                    document.getElementById('jobModal').style.display = 'none';
+                    startJobPolling(result.job_id);
+                    fetchJobsList();
+                    showToast(`New job launched: ${result.job_id}`);
+                } else if (result.status === 'error' || result.message) {
+                    showToast(`Re-run error: ${result.message}`);
+                }
+            } catch (err) {
+                console.error('Re-run error:', err);
+                showToast('Failed to re-run job.');
+            }
+        }
+
+        document.getElementById('modalCloseBtn').onclick = () => {
+            document.getElementById('jobModal').style.display = 'none';
+        };
+
+        document.getElementById('jobModal').onclick = (e) => {
+            if (e.target.id === 'jobModal') {
+                document.getElementById('jobModal').style.display = 'none';
+            }
+        };
+
+        document.getElementById('btnRefreshJobs').onclick = () => {
+            fetchJobsList();
+        };
+
+        const btnClearJobs = document.getElementById('btnClearJobs');
+        if (btnClearJobs) {
+            btnClearJobs.onclick = async () => {
+                if (confirm('Are you sure you want to clear all job history?')) {
+                    try {
+                        const res = await fetch('job-status.php?action=clear');
+                        const data = await res.json();
+                        if (data.status === 'success') {
+                            showToast('Job history cleared.');
+                            fetchJobsList();
+                        }
+                    } catch (err) {
+                        console.error('Clear jobs error:', err);
+                        showToast('Failed to clear job history.');
+                    }
+                }
+            };
+        }
+
+
+        // Periodic job list polling if Jobs tab is active
+        setInterval(() => {
+            if (activeTab === 'jobs') {
+                fetchJobsList();
+            }
+        }, 3000);
+
+        // Fetch initial jobs count on load
+        fetchJobsList();
 
         document.getElementById('cardMissing').onclick = () => tabMissingBtn.click();
         document.getElementById('cardTranslated').onclick = () => tabTranslatedBtn.click();
+
 
         document.getElementById('searchKeys').addEventListener('input', () => {
             if (activeTab === 'missing') {
